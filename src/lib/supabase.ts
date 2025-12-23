@@ -1,9 +1,16 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-// Criar cliente apenas se as credenciais estiverem disponíveis
-export const supabase = supabaseUrl && supabaseAnonKey 
-  ? createClient(supabaseUrl, supabaseAnonKey)
+// Validar se as variáveis estão configuradas corretamente
+const isValidConfig = 
+  supabaseUrl && 
+  supabaseAnonKey && 
+  supabaseUrl.startsWith('http') &&
+  supabaseAnonKey.length > 20
+
+// Exportar null se não estiver configurado, para evitar erros
+export const supabase = isValidConfig
+  ? createClient(supabaseUrl!, supabaseAnonKey!)
   : null
