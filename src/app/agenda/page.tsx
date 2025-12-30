@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { ArrowLeft, Plus, Calendar, Syringe, Stethoscope, Trash2, Baby, ChevronLeft, ChevronRight, Bell, Clock } from 'lucide-react'
-import Link from 'next/link'
+import { BackButton } from '@/components/BackButton'
 
 interface Evento {
   id: string
@@ -354,15 +354,7 @@ export default function AgendaPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 dark:from-gray-900 dark:to-gray-800">
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-6">
-          <Link 
-            href="/"
-            className="inline-flex items-center text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 mr-2" />
-            Voltar
-          </Link>
-        </div>
+        <BackButton />
 
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8">
           <div className="flex items-center justify-between mb-8">

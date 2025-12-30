@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { TrendingUp, Target, Clock, Zap } from 'lucide-react'
+import { BackButton } from '@/components/BackButton'
 
 interface SleepEntry {
   id: string
@@ -114,6 +115,7 @@ export default function Recomendacoes() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-100 p-4">
       <div className="max-w-4xl mx-auto">
+        <BackButton />
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-orange-900 mb-2 flex items-center justify-center gap-2">
             <TrendingUp className="w-8 h-8" />

@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Bell, Clock, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { BackButton } from '@/components/BackButton'
 
 interface Alert {
   id: string
@@ -107,6 +108,7 @@ export default function AlertasPersonalizados() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100 p-4">
       <div className="max-w-4xl mx-auto">
+        <BackButton />
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-purple-900 mb-2 flex items-center justify-center gap-2">
             <Bell className="w-8 h-8" />

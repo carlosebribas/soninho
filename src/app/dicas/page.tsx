@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { BookOpen, Star, Clock, Heart, Lightbulb } from 'lucide-react'
+import { BackButton } from '@/components/BackButton'
 
 interface Tip {
   id: string
@@ -118,6 +119,7 @@ export default function DicasSono() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100 p-4">
       <div className="max-w-6xl mx-auto">
+        <BackButton />
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-purple-900 mb-2 flex items-center justify-center gap-2">
             <BookOpen className="w-8 h-8" />

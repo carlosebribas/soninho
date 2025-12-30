@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { History, Plus, Calendar, Baby, Star } from 'lucide-react'
 import { format, differenceInMonths, differenceInDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { BackButton } from '@/components/BackButton'
 
 interface Milestone {
   id: string
@@ -193,6 +194,7 @@ export default function HistoricoDesenvolvimento() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-orange-100 p-4">
       <div className="max-w-6xl mx-auto">
+        <BackButton />
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-orange-900 mb-2 flex items-center justify-center gap-2">
             <History className="w-8 h-8" />

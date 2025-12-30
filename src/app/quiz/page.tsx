@@ -6,6 +6,7 @@ import { CheckCircle2, ArrowRight, ArrowLeft, Baby, Moon, Clock, Calendar } from
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
+import { BackButton } from '@/components/BackButton'
 
 interface Question {
   id: string
@@ -107,6 +108,7 @@ export default function QuizPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:to-gray-800">
       <div className="container mx-auto px-4 py-8 max-w-3xl">
+        <BackButton />
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-2">

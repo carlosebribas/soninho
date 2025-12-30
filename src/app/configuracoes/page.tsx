@@ -9,6 +9,7 @@ import { Slider } from '@/components/ui/slider'
 import { Badge } from '@/components/ui/badge'
 import { Settings, Thermometer, Volume2, Lightbulb, Wind, Moon, Sun } from 'lucide-react'
 import { useTheme } from 'next-themes'
+import { BackButton } from '@/components/BackButton'
 
 interface EnvironmentSettings {
   temperature: number
@@ -81,6 +82,7 @@ export default function ConfiguracoesAmbiente() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-100 p-4">
       <div className="max-w-4xl mx-auto">
+        <BackButton />
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-indigo-900 mb-2 flex items-center justify-center gap-2">
             <Settings className="w-8 h-8" />

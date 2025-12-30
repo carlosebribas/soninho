@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Users, MessageCircle, Heart, Plus, Trash2, Shield, ShieldOff } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { BackButton } from '@/components/BackButton'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -219,6 +220,7 @@ export default function Comunidade() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-teal-100 p-4">
       <div className="max-w-4xl mx-auto">
+        <BackButton />
         <div className="text-center mb-6">
           <h1 className="text-4xl font-bold text-teal-900 mb-2 flex items-center justify-center gap-2">
             <Users className="w-8 h-8" />

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
+import { BackButton } from '@/components/BackButton'
 
 export default function TimerPage() {
   const [time, setTime] = useState(0) // tempo em segundos
@@ -46,6 +46,9 @@ export default function TimerPage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+      <div className="absolute top-4 left-4">
+        <BackButton />
+      </div>
       <div className="text-center max-w-md bg-white rounded-lg shadow-lg p-8">
         <h1 className="text-3xl font-bold text-indigo-900 mb-6">Timer de Cochilo</h1>
 
@@ -106,13 +109,6 @@ export default function TimerPage() {
             Resetar
           </button>
         </div>
-
-        <Link
-          href="/"
-          className="block w-full bg-gray-200 text-gray-700 py-2 px-4 rounded-lg font-semibold hover:bg-gray-300 transition-colors text-center"
-        >
-          Voltar ao Início
-        </Link>
       </div>
     </div>
   )

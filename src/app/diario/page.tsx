@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Moon, Sun, Clock, Plus, Coffee, TrendingUp, AlertCircle, Lightbulb } from 'lucide-react'
 import { format, differenceInMinutes, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { BackButton } from '@/components/BackButton'
 
 interface SleepEntry {
   id: string
@@ -180,6 +181,7 @@ export default function DiarioSono() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="max-w-4xl mx-auto">
+        <BackButton />
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-indigo-900 mb-2 flex items-center justify-center gap-2">
             <Moon className="w-8 h-8" />
