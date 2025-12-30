@@ -627,13 +627,20 @@ export default function AgendaPage() {
                       {eventosDoDia.map(evento => (
                         <div
                           key={evento.id}
-                          className="flex items-center text-xs bg-blue-100 dark:bg-blue-900/30 rounded px-1 py-0.5"
-                          title={`${evento.titulo} - ${evento.hora}`}
+                          className="flex flex-col text-xs bg-blue-100 dark:bg-blue-900/30 rounded px-1 py-0.5"
+                          title={`${evento.titulo} - ${evento.hora}${calcularIdade(evento.data) ? ` - ${calcularIdade(evento.data)}` : ''}`}
                         >
-                          {getIconeTipo(evento.tipo)}
-                          <span className="ml-1 truncate text-gray-900 dark:text-white">
-                            {evento.hora}
-                          </span>
+                          <div className="flex items-center">
+                            {getIconeTipo(evento.tipo)}
+                            <span className="ml-1 truncate text-gray-900 dark:text-white">
+                              {evento.hora}
+                            </span>
+                          </div>
+                          {calcularIdade(evento.data) && (
+                            <span className="text-[10px] font-semibold text-purple-700 dark:text-purple-300 truncate">
+                              {calcularIdade(evento.data)}
+                            </span>
+                          )}
                         </div>
                       ))}
                       {saltosDoDia.map((salto, idx) => (
