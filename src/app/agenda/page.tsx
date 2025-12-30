@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ArrowLeft, Plus, Calendar, Syringe, Stethoscope, Trash2, Baby, ChevronLeft, ChevronRight, Bell, Clock } from 'lucide-react'
+import { ArrowLeft, Plus, Calendar, Syringe, Stethoscope, Trash2, Baby, ChevronLeft, ChevronRight, Bell, Clock, Download, Share2 } from 'lucide-react'
 import { BackButton } from '@/components/BackButton'
 
 interface Evento {
@@ -366,6 +366,150 @@ export default function AgendaPage() {
     localStorage.setItem('eventosAgenda', JSON.stringify(novosEventos))
   }
 
+  const formatarDataParaICS = (data: string, hora: string): string => {
+    const dataObj = new Date(`${data}T${hora}`)
+    return dataObj.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
+  }
+
+  const exportarParaGoogleCalendar = (evento: Evento) => {
+    const dataInicio = formatarDataParaICS(evento.data, evento.hora)
+    const dataFim = new Date(new Date(`${evento.data}T${evento.hora}`).getTime() + 60 * 60 * 1000)
+    const dataFimFormatada = dataFim.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
+
+    const titulo = encodeURIComponent(evento.titulo)
+    const descricao = encodeURIComponent(evento.observacoes || '')
+    const idadeBebe = calcularIdade(evento.data)
+    const detalhes = encodeURIComponent(`${evento.observacoes ? evento.observacoes + '\n\n' : ''}Idade do bebê: ${idadeBebe}`)
+
+    const url = `https://www.google.com/calendar/render?action=TEMPLATE&text=${titulo}&dates=${dataInicio}/${dataFimFormatada}&details=${detalhes}&sf=true&output=xml`
+
+    window.open(url, '_blank')
+  }
+
+  const exportarParaOutlook = (evento: Evento) => {
+    const dataInicio = new Date(`${evento.data}T${evento.hora}`).toISOString()
+    const dataFim = new Date(new Date(`${evento.data}T${evento.hora}`).getTime() + 60 * 60 * 1000).toISOString()
+
+    const titulo = encodeURIComponent(evento.titulo)
+    const idadeBebe = calcularIdade(evento.data)
+    const descricao = encodeURIComponent(`${evento.observacoes ? evento.observacoes + '\n\n' : ''}Idade do bebê: ${idadeBebe}`)
+
+    const url = `https://outlook.live.com/calendar/0/deeplink/compose?subject=${titulo}&startdt=${dataInicio}&enddt=${dataFim}&body=${descricao}`
+
+    window.open(url, '_blank')
+  }
+
+  const gerarArquivoICS = (evento: Evento) => {
+    const dataInicio = formatarDataParaICS(evento.data, evento.hora)
+    const dataFim = new Date(new Date(`${evento.data}T${evento.hora}`).getTime() + 60 * 60 * 1000)
+    const dataFimFormatada = dataFim.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
+    const idadeBebe = calcularIdade(evento.data)
+
+    const icsContent = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Lasy AI//Agenda do Bebê//PT
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+DTSTART:${dataInicio}
+DTEND:${dataFimFormatada}
+DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'}
+UID:${evento.id}@lasyai.com
+SUMMARY:${evento.titulo}
+DESCRIPTION:${evento.observacoes ? evento.observacoes + '\\n\\n' : ''}Idade do bebê: ${idadeBebe}
+STATUS:CONFIRMED
+SEQUENCE:0
+BEGIN:VALARM
+TRIGGER:-P3D
+ACTION:DISPLAY
+DESCRIPTION:Lembrete: ${evento.titulo} em 3 dias
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-P1D
+ACTION:DISPLAY
+DESCRIPTION:Lembrete: ${evento.titulo} amanhã
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-PT1H
+ACTION:DISPLAY
+DESCRIPTION:Lembrete: ${evento.titulo} em 1 hora
+END:VALARM
+END:VEVENT
+END:VCALENDAR`
+
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = `${evento.titulo.replace(/[^a-z0-9]/gi, '_')}.ics`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  const exportarTodosEventos = () => {
+    if (eventos.length === 0) return
+
+    const eventosICS = eventos.map(evento => {
+      const dataInicio = formatarDataParaICS(evento.data, evento.hora)
+      const dataFim = new Date(new Date(`${evento.data}T${evento.hora}`).getTime() + 60 * 60 * 1000)
+      const dataFimFormatada = dataFim.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
+      const idadeBebe = calcularIdade(evento.data)
+
+      let alarmes = ''
+      if (evento.alertas?.tresDias) {
+        alarmes += `BEGIN:VALARM
+TRIGGER:-P3D
+ACTION:DISPLAY
+DESCRIPTION:Lembrete: ${evento.titulo} em 3 dias
+END:VALARM
+`
+      }
+      if (evento.alertas?.umDia) {
+        alarmes += `BEGIN:VALARM
+TRIGGER:-P1D
+ACTION:DISPLAY
+DESCRIPTION:Lembrete: ${evento.titulo} amanhã
+END:VALARM
+`
+      }
+      if (evento.alertas?.umaHora) {
+        alarmes += `BEGIN:VALARM
+TRIGGER:-PT1H
+ACTION:DISPLAY
+DESCRIPTION:Lembrete: ${evento.titulo} em 1 hora
+END:VALARM
+`
+      }
+
+      return `BEGIN:VEVENT
+DTSTART:${dataInicio}
+DTEND:${dataFimFormatada}
+DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'}
+UID:${evento.id}@lasyai.com
+SUMMARY:${evento.titulo}
+DESCRIPTION:${evento.observacoes ? evento.observacoes + '\\n\\n' : ''}Idade do bebê: ${idadeBebe}
+STATUS:CONFIRMED
+SEQUENCE:0
+${alarmes}END:VEVENT`
+    }).join('\n')
+
+    const icsContent = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Lasy AI//Agenda do Bebê//PT
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+${eventosICS}
+END:VCALENDAR`
+
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = 'agenda_bebe_completa.ics'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   const getIconeTipo = (tipo: string) => {
     switch (tipo) {
       case 'consulta':
@@ -390,20 +534,58 @@ export default function AgendaPage() {
         <BackButton />
 
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8">
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
             <div className="flex items-center">
               <Calendar className="w-10 h-10 text-purple-600 dark:text-purple-400 mr-4" />
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
                 Agenda do Bebê
               </h1>
             </div>
-            <button
-              onClick={() => setMostrarForm(!mostrarForm)}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-lg font-semibold hover:from-purple-600 hover:to-pink-600 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center"
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              Novo Evento
-            </button>
+            <div className="flex gap-3 flex-wrap">
+              <button
+                onClick={exportarTodosEventos}
+                disabled={eventos.length === 0}
+                className={`${
+                  eventos.length === 0
+                    ? 'bg-gray-300 dark:bg-gray-600 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600'
+                } text-white px-4 py-3 rounded-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-xl flex items-center text-sm`}
+                title="Exportar todos os eventos para Google/Outlook/Apple Calendar"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Exportar Todos
+              </button>
+              <button
+                onClick={() => setMostrarForm(!mostrarForm)}
+                className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-lg font-semibold hover:from-purple-600 hover:to-pink-600 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center"
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                Novo Evento
+              </button>
+            </div>
+          </div>
+
+          {/* Info sobre Integração */}
+          <div className="mb-8 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <Bell className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Receba Alertas no seu Celular! 📱
+                </h3>
+                <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                  Para receber notificações efetivas dos compromissos, exporte os eventos para o seu calendário:
+                </p>
+                <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-1 ml-4">
+                  <li>• <strong>Google Calendar:</strong> Sincroniza automaticamente com Android e iOS</li>
+                  <li>• <strong>Outlook:</strong> Sincroniza com Microsoft 365 e Outlook mobile</li>
+                  <li>• <strong>Arquivo .ics:</strong> Compatível com Apple Calendar, Gmail e outros</li>
+                </ul>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-3">
+                  💡 Os alertas configurados (3 dias, 1 dia, 1 hora antes) serão incluídos automaticamente!
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Alertas Ativos */}
@@ -804,39 +986,68 @@ export default function AgendaPage() {
                   .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())
                   .slice(0, 5)
                   .map((evento) => (
-                    <div key={evento.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 flex items-center justify-between hover:shadow-lg transition-shadow">
-                      <div className="flex items-center flex-1">
-                        <div className="mr-4">
-                          {getIconeTipo(evento.tipo)}
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900 dark:text-white">
-                            {evento.titulo}
-                          </h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-300">
-                            {new Date(evento.data).toLocaleDateString('pt-BR')} às {evento.hora}
-                            {calcularIdade(evento.data) && (
-                              <>
-                                <span className="mx-2">•</span>
-                                <span className="font-semibold text-purple-600 dark:text-purple-400">
-                                  {calcularIdade(evento.data)}
-                                </span>
-                              </>
-                            )}
-                          </p>
-                          {evento.observacoes && (
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                              {evento.observacoes}
+                    <div key={evento.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 hover:shadow-lg transition-shadow">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center flex-1">
+                          <div className="mr-4">
+                            {getIconeTipo(evento.tipo)}
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-gray-900 dark:text-white">
+                              {evento.titulo}
+                            </h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-300">
+                              {new Date(evento.data).toLocaleDateString('pt-BR')} às {evento.hora}
+                              {calcularIdade(evento.data) && (
+                                <>
+                                  <span className="mx-2">•</span>
+                                  <span className="font-semibold text-purple-600 dark:text-purple-400">
+                                    {calcularIdade(evento.data)}
+                                  </span>
+                                </>
+                              )}
                             </p>
-                          )}
+                            {evento.observacoes && (
+                              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                {evento.observacoes}
+                              </p>
+                            )}
+                          </div>
                         </div>
+                        <button
+                          onClick={() => deletarEvento(evento.id)}
+                          className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors ml-4"
+                          title="Excluir evento"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
                       </div>
-                      <button
-                        onClick={() => deletarEvento(evento.id)}
-                        className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors ml-4"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
+                      <div className="flex gap-2 flex-wrap">
+                        <button
+                          onClick={() => exportarParaGoogleCalendar(evento)}
+                          className="flex items-center gap-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-blue-200 dark:hover:bg-blue-800/40 transition-colors"
+                          title="Adicionar ao Google Calendar"
+                        >
+                          <Share2 className="w-3 h-3" />
+                          Google Calendar
+                        </button>
+                        <button
+                          onClick={() => exportarParaOutlook(evento)}
+                          className="flex items-center gap-2 bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-cyan-200 dark:hover:bg-cyan-800/40 transition-colors"
+                          title="Adicionar ao Outlook Calendar"
+                        >
+                          <Share2 className="w-3 h-3" />
+                          Outlook
+                        </button>
+                        <button
+                          onClick={() => gerarArquivoICS(evento)}
+                          className="flex items-center gap-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-purple-200 dark:hover:bg-purple-800/40 transition-colors"
+                          title="Baixar arquivo .ics (compatível com Apple Calendar e outros)"
+                        >
+                          <Download className="w-3 h-3" />
+                          Baixar .ics
+                        </button>
+                      </div>
                     </div>
                   ))}
               </div>
