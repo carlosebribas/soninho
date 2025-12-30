@@ -185,21 +185,29 @@ export default function AuthPage() {
                 },
               },
             }}
-            providers={['google']}
+            providers={[]}
             redirectTo={typeof window !== 'undefined' ? window.location.origin : ''}
           />
 
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Ao criar uma conta, você concorda com nossos{' '}
-              <a href="#" className="text-blue-600 hover:underline">
-                Termos de Uso
-              </a>{' '}
-              e{' '}
-              <a href="#" className="text-blue-600 hover:underline">
-                Política de Privacidade
-              </a>
-            </p>
+          <div className="mt-6 space-y-4">
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
+              <p className="text-xs text-gray-700 dark:text-gray-300">
+                <strong>💡 Dica:</strong> Para habilitar login com Google, acesse o painel do Supabase → Authentication → Providers → Google e configure o OAuth.
+              </p>
+            </div>
+
+            <div className="text-center">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Ao criar uma conta, você concorda com nossos{' '}
+                <a href="#" className="text-blue-600 hover:underline">
+                  Termos de Uso
+                </a>{' '}
+                e{' '}
+                <a href="#" className="text-blue-600 hover:underline">
+                  Política de Privacidade
+                </a>
+              </p>
+            </div>
           </div>
         </div>
       </div>
