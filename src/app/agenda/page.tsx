@@ -293,6 +293,39 @@ export default function AgendaPage() {
     })
   }
 
+  const calcularIdade = (dataEvento: string): string => {
+    if (!dataNascimento) return ''
+
+    const nascimento = new Date(dataNascimento)
+    const evento = new Date(dataEvento)
+
+    // Calcular diferença em meses
+    let meses = (evento.getFullYear() - nascimento.getFullYear()) * 12
+    meses += evento.getMonth() - nascimento.getMonth()
+
+    // Ajustar se o dia do evento for antes do dia de nascimento no mês
+    if (evento.getDate() < nascimento.getDate()) {
+      meses--
+    }
+
+    if (meses < 0) return ''
+
+    if (meses === 0) {
+      return 'Recém-nascido'
+    } else if (meses < 12) {
+      return `${meses} ${meses === 1 ? 'mês' : 'meses'}`
+    } else {
+      const anos = Math.floor(meses / 12)
+      const mesesRestantes = meses % 12
+
+      if (mesesRestantes === 0) {
+        return `${anos} ${anos === 1 ? 'ano' : 'anos'}`
+      } else {
+        return `${anos} ${anos === 1 ? 'ano' : 'anos'} e ${mesesRestantes} ${mesesRestantes === 1 ? 'mês' : 'meses'}`
+      }
+    }
+  }
+
 
   const mesAnterior = () => {
     setMesAtual(new Date(mesAtual.getFullYear(), mesAtual.getMonth() - 1))
@@ -775,6 +808,14 @@ export default function AgendaPage() {
                           </h3>
                           <p className="text-sm text-gray-600 dark:text-gray-300">
                             {new Date(evento.data).toLocaleDateString('pt-BR')} às {evento.hora}
+                            {calcularIdade(evento.data) && (
+                              <>
+                                <span className="mx-2">•</span>
+                                <span className="font-semibold text-purple-600 dark:text-purple-400">
+                                  {calcularIdade(evento.data)}
+                                </span>
+                              </>
+                            )}
                           </p>
                           {evento.observacoes && (
                             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -822,8 +863,13 @@ export default function AgendaPage() {
                         <div className="flex items-start">
                           <Baby className="w-8 h-8 text-pink-600 mr-4 flex-shrink-0 mt-1" />
                           <div className="flex-1">
-                            <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
-                              {salto.idade}
+                            <h3 className="font-semibold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
+                              <span>{salto.idade}</span>
+                              {calcularIdade(dataInicio.toISOString().split('T')[0]) && (
+                                <span className="text-sm font-medium bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-full">
+                                  {calcularIdade(dataInicio.toISOString().split('T')[0])}
+                                </span>
+                              )}
                             </h3>
                             <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
                               {salto.descricao}
