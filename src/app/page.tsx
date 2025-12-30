@@ -1,14 +1,21 @@
 import Link from 'next/link'
-import { Moon, Bell, TrendingUp, BookOpen, Users, History, Settings, Baby, Calendar, LogIn } from 'lucide-react'
+import { Moon, Bell, TrendingUp, BookOpen, Users, History, Settings, Baby, Calendar, LogIn, Sparkles } from 'lucide-react'
 
 export default function Home() {
   const features = [
     {
+      href: '/quiz',
+      icon: Sparkles,
+      title: 'Descobrir Plano Ideal',
+      description: 'Faça um quiz e encontre o melhor plano para você',
+      highlight: true,
+      special: true
+    },
+    {
       href: '/auth',
       icon: LogIn,
       title: 'Login / Cadastro',
-      description: 'Entre ou crie sua conta para começar',
-      highlight: true
+      description: 'Entre ou crie sua conta para começar'
     },
     {
       href: '/cadastro',
@@ -91,22 +98,34 @@ export default function Home() {
               <Link
                 key={feature.href}
                 href={feature.href}
-                className={`bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl p-5 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 border active:scale-95 ${
-                  feature.highlight
-                    ? 'border-blue-500 dark:border-blue-400 ring-2 ring-blue-200 dark:ring-blue-800'
-                    : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
+                className={`rounded-xl sm:rounded-2xl p-5 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 border active:scale-95 ${
+                  feature.special
+                    ? 'bg-gradient-to-br from-purple-500 to-pink-600 border-purple-400 ring-2 ring-purple-200 dark:ring-purple-800'
+                    : feature.highlight
+                    ? 'bg-white dark:bg-gray-800 border-blue-500 dark:border-blue-400 ring-2 ring-blue-200 dark:ring-blue-800'
+                    : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
                 }`}
               >
                 <div className="flex flex-col items-center text-center">
                   <Icon className={`w-10 h-10 sm:w-12 sm:h-12 mb-3 sm:mb-4 ${
-                    feature.highlight
+                    feature.special
+                      ? 'text-white'
+                      : feature.highlight
                       ? 'text-blue-600 dark:text-blue-400'
                       : 'text-blue-600 dark:text-blue-400'
                   }`} />
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  <h3 className={`text-base sm:text-lg font-semibold mb-2 ${
+                    feature.special
+                      ? 'text-white'
+                      : 'text-gray-900 dark:text-white'
+                  }`}>
                     {feature.title}
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-300 text-xs sm:text-sm leading-relaxed">
+                  <p className={`text-xs sm:text-sm leading-relaxed ${
+                    feature.special
+                      ? 'text-white/90'
+                      : 'text-gray-600 dark:text-gray-300'
+                  }`}>
                     {feature.description}
                   </p>
                 </div>
