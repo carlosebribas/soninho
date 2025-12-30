@@ -186,7 +186,7 @@ export default function AuthPage() {
               },
             }}
             providers={[]}
-            redirectTo={typeof window !== 'undefined' ? window.location.origin : ''}
+            redirectTo={process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : '')}
           />
 
           <div className="mt-6 space-y-4">
