@@ -20,9 +20,10 @@ interface Evento {
 
 interface SaltoDesenvolvimento {
   idade: string
+  semanas: number
   descricao: string
   marco: string
-  meses: number
+  duracaoDias: number // Duração do período de adaptação (1-2 semanas)
 }
 
 interface Alerta {
@@ -40,6 +41,7 @@ export default function AgendaPage() {
   const [dataNascimento, setDataNascimento] = useState<string>('')
   const [mesAtual, setMesAtual] = useState(new Date())
   const [alertasAtivos, setAlertasAtivos] = useState<Alerta[]>([])
+  const [saltoSelecionado, setSaltoSelecionado] = useState<SaltoDesenvolvimento | null>(null)
   const [novoEvento, setNovoEvento] = useState<Evento>({
     id: '',
     tipo: 'consulta',
@@ -55,16 +57,100 @@ export default function AgendaPage() {
   })
 
   const saltosDesenvolvimento: SaltoDesenvolvimento[] = [
-    { idade: '1 mês', descricao: 'Primeiros sorrisos sociais', marco: 'Começa a reconhecer rostos familiares', meses: 1 },
-    { idade: '2 meses', descricao: 'Sustenta a cabeça', marco: 'Maior controle do pescoço', meses: 2 },
-    { idade: '3 meses', descricao: 'Agarra objetos', marco: 'Coordenação mão-olho se desenvolve', meses: 3 },
-    { idade: '4 meses', descricao: 'Rola de barriga para cima', marco: 'Maior mobilidade corporal', meses: 4 },
-    { idade: '6 meses', descricao: 'Senta sem apoio', marco: 'Fortalecimento do tronco', meses: 6 },
-    { idade: '7 meses', descricao: 'Engatinha', marco: 'Exploração do ambiente', meses: 7 },
-    { idade: '9 meses', descricao: 'Fica em pé com apoio', marco: 'Preparação para andar', meses: 9 },
-    { idade: '12 meses', descricao: 'Primeiros passos', marco: 'Independência motora', meses: 12 },
-    { idade: '18 meses', descricao: 'Fala palavras simples', marco: 'Desenvolvimento da linguagem', meses: 18 },
-    { idade: '24 meses', descricao: 'Forma frases curtas', marco: 'Comunicação mais complexa', meses: 24 }
+    // Primeiro Ano - Os 10 saltos clássicos
+    {
+      idade: '1 mês (5 semanas)',
+      semanas: 5,
+      descricao: 'Melhora na visão e foco',
+      marco: 'Bebê começa a observar rostos e sorrir espontaneamente',
+      duracaoDias: 7
+    },
+    {
+      idade: '2 meses (8 semanas)',
+      semanas: 8,
+      descricao: 'Descobre as mãos e pés',
+      marco: 'Visão mais apurada e tentativa de controlar movimentos',
+      duracaoDias: 7
+    },
+    {
+      idade: '3 meses (12 semanas)',
+      semanas: 12,
+      descricao: 'Sustenta a cabeça',
+      marco: 'Interage mais com o ambiente e segue objetos com o olhar',
+      duracaoDias: 10
+    },
+    {
+      idade: '4-5 meses (19 semanas)',
+      semanas: 19,
+      descricao: 'Começa a rolar e agarrar objetos',
+      marco: 'Inicia a fase de levar tudo à boca',
+      duracaoDias: 14
+    },
+    {
+      idade: '6 meses (26 semanas)',
+      semanas: 26,
+      descricao: 'Senta com apoio e inicia lalação',
+      marco: 'Sons repetidos; pode começar a estranhar desconhecidos',
+      duracaoDias: 10
+    },
+    {
+      idade: '7-8 meses (37 semanas)',
+      semanas: 37,
+      descricao: 'Permanência do objeto',
+      marco: 'Compreende que objetos existem mesmo escondidos; senta sem apoio',
+      duracaoDias: 14
+    },
+    {
+      idade: '9-10 meses (46 semanas)',
+      semanas: 46,
+      descricao: 'Começa a engatinhar',
+      marco: 'Usa movimento de pinça com os dedos; entende comandos simples',
+      duracaoDias: 14
+    },
+    {
+      idade: '11-12 meses (55 semanas)',
+      semanas: 55,
+      descricao: 'Primeiros passos',
+      marco: 'Com ou sem apoio; primeiras palavras com sentido (mamãe, papai)',
+      duracaoDias: 14
+    },
+    {
+      idade: '12 meses (64 semanas)',
+      semanas: 64,
+      descricao: 'Consolidação da marcha',
+      marco: 'Maior confiança ao andar e vocabulário expandindo',
+      duracaoDias: 7
+    },
+
+    // Segundo Ano - Marcos de Independência
+    {
+      idade: '14 meses (1 ano e 2 meses)',
+      semanas: 60,
+      descricao: 'Testa a independência',
+      marco: 'Tenta comer sozinho e imita comportamentos dos adultos',
+      duracaoDias: 10
+    },
+    {
+      idade: '16 meses (1 ano e 4 meses)',
+      semanas: 68,
+      descricao: 'Anda com confiança',
+      marco: 'Pode começar a subir degraus com apoio; demonstra vontades claras',
+      duracaoDias: 10
+    },
+    {
+      idade: '18 meses (1 ano e meio)',
+      semanas: 78,
+      descricao: 'Expansão rápida do vocabulário',
+      marco: 'Constrói torres de blocos; usa colher; reconhece nomes de objetos',
+      duracaoDias: 14
+    },
+    {
+      idade: '20-24 meses (até 2 anos)',
+      semanas: 96,
+      descricao: 'Corre e chuta bola',
+      marco: 'Forma frases simples com duas palavras; usa "eu" e "meu"',
+      duracaoDias: 14
+    }
   ]
 
   useEffect(() => {
@@ -142,19 +228,35 @@ export default function AgendaPage() {
     setAlertasAtivos(novosAlertas)
   }
 
-  const calcularDataSalto = (meses: number): Date => {
+  const calcularDataSalto = (semanas: number): Date => {
     if (!dataNascimento) return new Date()
     const nascimento = new Date(dataNascimento)
     const dataSalto = new Date(nascimento)
-    dataSalto.setMonth(dataSalto.getMonth() + meses)
+    dataSalto.setDate(dataSalto.getDate() + (semanas * 7))
     return dataSalto
   }
 
   const getSaltosDoMes = (mes: Date): SaltoDesenvolvimento[] => {
     return saltosDesenvolvimento.filter(salto => {
-      const dataSalto = calcularDataSalto(salto.meses)
-      return dataSalto.getMonth() === mes.getMonth() && 
-             dataSalto.getFullYear() === mes.getFullYear()
+      const dataInicio = calcularDataSalto(salto.semanas)
+      const dataFim = new Date(dataInicio)
+      dataFim.setDate(dataFim.getDate() + salto.duracaoDias)
+
+      // Verificar se o salto está ativo durante este mês
+      return (dataInicio.getMonth() === mes.getMonth() && dataInicio.getFullYear() === mes.getFullYear()) ||
+             (dataFim.getMonth() === mes.getMonth() && dataFim.getFullYear() === mes.getFullYear())
+    })
+  }
+
+  const getSaltosDoDia = (dia: number): SaltoDesenvolvimento[] => {
+    const dataComparacao = new Date(mesAtual.getFullYear(), mesAtual.getMonth(), dia)
+    return saltosDesenvolvimento.filter(salto => {
+      const dataInicio = calcularDataSalto(salto.semanas)
+      const dataFim = new Date(dataInicio)
+      dataFim.setDate(dataFim.getDate() + salto.duracaoDias)
+
+      // Verificar se este dia está dentro do período do salto
+      return dataComparacao >= dataInicio && dataComparacao <= dataFim
     })
   }
 
@@ -191,13 +293,6 @@ export default function AgendaPage() {
     })
   }
 
-  const getSaltosDoDia = (dia: number) => {
-    const saltosDoMes = getSaltosDoMes(mesAtual)
-    return saltosDoMes.filter(salto => {
-      const dataSalto = calcularDataSalto(salto.meses)
-      return dataSalto.getDate() === dia
-    })
-  }
 
   const mesAnterior = () => {
     setMesAtual(new Date(mesAtual.getFullYear(), mesAtual.getMonth() - 1))
@@ -517,16 +612,17 @@ export default function AgendaPage() {
                         </div>
                       ))}
                       {saltosDoDia.map((salto, idx) => (
-                        <div
+                        <button
                           key={idx}
-                          className="flex items-center text-xs bg-pink-100 dark:bg-pink-900/30 rounded px-1 py-0.5"
-                          title={salto.descricao}
+                          onClick={() => setSaltoSelecionado(salto)}
+                          className="flex items-center text-xs bg-pink-100 dark:bg-pink-900/30 hover:bg-pink-200 dark:hover:bg-pink-800/40 rounded px-1 py-0.5 transition-colors cursor-pointer w-full"
+                          title={`Clique para ver detalhes - ${salto.descricao}`}
                         >
-                          <Baby className="w-3 h-3 text-pink-600" />
-                          <span className="ml-1 truncate text-gray-900 dark:text-white">
-                            {salto.idade}
+                          <Baby className="w-3 h-3 text-pink-600 flex-shrink-0" />
+                          <span className="ml-1 truncate text-gray-900 dark:text-white text-left">
+                            Salto
                           </span>
-                        </div>
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -554,6 +650,110 @@ export default function AgendaPage() {
               <span className="text-sm text-gray-700 dark:text-gray-300">Salto de Desenvolvimento</span>
             </div>
           </div>
+
+          {/* Modal de Detalhes do Salto */}
+          {saltoSelecionado && (
+            <div
+              className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+              onClick={() => setSaltoSelecionado(null)}
+            >
+              <div
+                className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full p-8 max-h-[90vh] overflow-y-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-start justify-between mb-6">
+                  <div className="flex items-center">
+                    <Baby className="w-12 h-12 text-pink-600 mr-4" />
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                        {saltoSelecionado.idade}
+                      </h2>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Salto de Desenvolvimento
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setSaltoSelecionado(null)}
+                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                {dataNascimento && (
+                  <div className="bg-pink-50 dark:bg-pink-900/20 rounded-lg p-4 mb-6">
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+                      📅 Período do Salto:
+                    </h3>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
+                      <strong>Início:</strong> {calcularDataSalto(saltoSelecionado.semanas).toLocaleDateString('pt-BR')}
+                      <br />
+                      <strong>Duração:</strong> {saltoSelecionado.duracaoDias === 7 ? '1 semana' : `${Math.ceil(saltoSelecionado.duracaoDias / 7)} semanas`} ({saltoSelecionado.duracaoDias} dias)
+                      <br />
+                      <strong>Término estimado:</strong> {(() => {
+                        const fim = new Date(calcularDataSalto(saltoSelecionado.semanas))
+                        fim.setDate(fim.getDate() + saltoSelecionado.duracaoDias)
+                        return fim.toLocaleDateString('pt-BR')
+                      })()}
+                    </p>
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-2 flex items-center">
+                      <span className="text-2xl mr-2">🎯</span>
+                      Desenvolvimento Esperado
+                    </h3>
+                    <p className="text-gray-700 dark:text-gray-300 pl-8">
+                      {saltoSelecionado.descricao}
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-2 flex items-center">
+                      <span className="text-2xl mr-2">⭐</span>
+                      Marco Importante
+                    </h3>
+                    <p className="text-gray-700 dark:text-gray-300 pl-8">
+                      {saltoSelecionado.marco}
+                    </p>
+                  </div>
+
+                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mt-6">
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-2 flex items-center">
+                      <span className="text-xl mr-2">💡</span>
+                      Dica
+                    </h3>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
+                      Durante os saltos de desenvolvimento, é normal que o bebê fique mais irritado,
+                      com o sono alterado e mais dependente. Esse período é temporário e dura de 1 a 2 semanas
+                      até que o bebê se adapte à nova habilidade.
+                    </p>
+                  </div>
+
+                  <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-2 flex items-center">
+                      <span className="text-xl mr-2">📖</span>
+                      Referência
+                    </h3>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
+                      Para acompanhar o progresso oficial, consulte a{' '}
+                      <span className="font-semibold">Caderneta da Criança do Ministério da Saúde</span>.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setSaltoSelecionado(null)}
+                  className="w-full mt-6 bg-gradient-to-r from-pink-500 to-purple-500 text-white py-3 rounded-lg font-semibold hover:from-pink-600 hover:to-purple-600 transition-all"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Lista de Eventos Próximos */}
           <div>
@@ -602,6 +802,62 @@ export default function AgendaPage() {
               </div>
             )}
           </div>
+
+          {/* Próximos Saltos de Desenvolvimento */}
+          {dataNascimento && (
+            <div className="mt-8">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                Próximos Saltos de Desenvolvimento
+              </h2>
+              <div className="space-y-3">
+                {saltosDesenvolvimento
+                  .filter(salto => {
+                    const dataSalto = calcularDataSalto(salto.semanas)
+                    return dataSalto >= new Date()
+                  })
+                  .slice(0, 5)
+                  .map((salto, index) => {
+                    const dataInicio = calcularDataSalto(salto.semanas)
+                    const dataFim = new Date(dataInicio)
+                    dataFim.setDate(dataFim.getDate() + salto.duracaoDias)
+
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => setSaltoSelecionado(salto)}
+                        className="w-full bg-gradient-to-r from-pink-50 to-purple-50 dark:from-pink-900/20 dark:to-purple-900/20 rounded-lg p-4 hover:shadow-lg transition-all border border-pink-200 dark:border-pink-800 text-left"
+                      >
+                        <div className="flex items-start">
+                          <Baby className="w-8 h-8 text-pink-600 mr-4 flex-shrink-0 mt-1" />
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
+                              {salto.idade}
+                            </h3>
+                            <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                              {salto.descricao}
+                            </p>
+                            <div className="flex items-center text-xs text-gray-600 dark:text-gray-400">
+                              <Clock className="w-3 h-3 mr-1" />
+                              {dataInicio.toLocaleDateString('pt-BR')} até {dataFim.toLocaleDateString('pt-BR')}
+                              <span className="mx-2">•</span>
+                              {salto.duracaoDias === 7 ? '1 semana' : `${Math.ceil(salto.duracaoDias / 7)} semanas`}
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                    )
+                  })}
+              </div>
+              {saltosDesenvolvimento.filter(salto => calcularDataSalto(salto.semanas) >= new Date()).length === 0 && (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <Baby className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p className="text-sm">
+                    Todos os saltos de desenvolvimento foram concluídos! 🎉
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
