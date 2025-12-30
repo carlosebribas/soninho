@@ -7,9 +7,19 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
-import { Users, MessageCircle, Heart, Plus, ThumbsUp } from 'lucide-react'
+import { Users, MessageCircle, Heart, Plus, Trash2, Shield, ShieldOff } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface Post {
   id: string
@@ -38,6 +48,13 @@ export default function Comunidade() {
   })
   const [newComment, setNewComment] = useState('')
   const [selectedPost, setSelectedPost] = useState<string | null>(null)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean
+    type: 'post' | 'comment'
+    postId?: string
+    commentId?: string
+  }>({ open: false, type: 'post' })
 
   // Load posts from localStorage
   useEffect(() => {
@@ -161,15 +178,65 @@ export default function Comunidade() {
     return name.split(' ').map(n => n[0]).join('').toUpperCase()
   }
 
+  const toggleAdmin = () => {
+    setIsAdmin(!isAdmin)
+  }
+
+  const openDeleteDialog = (type: 'post' | 'comment', postId: string, commentId?: string) => {
+    setDeleteDialog({
+      open: true,
+      type,
+      postId,
+      commentId
+    })
+  }
+
+  const confirmDelete = () => {
+    if (deleteDialog.type === 'post' && deleteDialog.postId) {
+      deletePost(deleteDialog.postId)
+    } else if (deleteDialog.type === 'comment' && deleteDialog.postId && deleteDialog.commentId) {
+      deleteComment(deleteDialog.postId, deleteDialog.commentId)
+    }
+    setDeleteDialog({ open: false, type: 'post' })
+  }
+
+  const deletePost = (postId: string) => {
+    setPosts(posts.filter(post => post.id !== postId))
+  }
+
+  const deleteComment = (postId: string, commentId: string) => {
+    setPosts(posts.map(post =>
+      post.id === postId
+        ? { ...post, comments: post.comments.filter(comment => comment.id !== commentId) }
+        : post
+    ))
+  }
+
+  const canDelete = (author: string) => {
+    return isAdmin || author === 'Você'
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-teal-100 p-4">
       <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <h1 className="text-4xl font-bold text-teal-900 mb-2 flex items-center justify-center gap-2">
             <Users className="w-8 h-8" />
             Comunidade de Pais
           </h1>
           <p className="text-gray-600">Compartilhe experiências e tire dúvidas com outros pais</p>
+        </div>
+
+        {/* Admin Toggle */}
+        <div className="flex justify-end mb-4">
+          <Button
+            onClick={toggleAdmin}
+            variant={isAdmin ? "default" : "outline"}
+            className={`flex items-center gap-2 ${isAdmin ? 'bg-red-600 hover:bg-red-700' : ''}`}
+          >
+            {isAdmin ? <Shield className="w-4 h-4" /> : <ShieldOff className="w-4 h-4" />}
+            {isAdmin ? 'Modo Admin Ativo' : 'Ativar Modo Admin'}
+          </Button>
         </div>
 
         {/* Add New Post */}
@@ -228,9 +295,21 @@ export default function Comunidade() {
                       </div>
                     </div>
                   </div>
-                  <Badge className={getCategoryColor(post.category)}>
-                    {post.category}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge className={getCategoryColor(post.category)}>
+                      {post.category}
+                    </Badge>
+                    {canDelete(post.author) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openDeleteDialog('post', post.id)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
                 <CardTitle className="text-xl mt-4">{post.title}</CardTitle>
               </CardHeader>
@@ -263,7 +342,7 @@ export default function Comunidade() {
                   <div className="border-t pt-4">
                     <div className="space-y-4 mb-4">
                       {post.comments.map((comment) => (
-                        <div key={comment.id} className="flex gap-3">
+                        <div key={comment.id} className="flex gap-3 group">
                           <Avatar className="w-8 h-8">
                             <AvatarFallback className="text-xs">{getInitials(comment.author)}</AvatarFallback>
                           </Avatar>
@@ -273,6 +352,16 @@ export default function Comunidade() {
                               <span className="text-xs text-gray-500">
                                 {format(new Date(comment.createdAt), "dd/MM HH:mm", { locale: ptBR })}
                               </span>
+                              {canDelete(comment.author) && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openDeleteDialog('comment', post.id, comment.id)}
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity ml-auto"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              )}
                             </div>
                             <p className="text-sm text-gray-700">{comment.content}</p>
                           </div>
@@ -305,6 +394,26 @@ export default function Comunidade() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteDialog.type === 'post'
+                ? 'Tem certeza que deseja excluir esta publicação? Esta ação não pode ser desfeita e todos os comentários serão removidos.'
+                : 'Tem certeza que deseja excluir este comentário? Esta ação não pode ser desfeita.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
