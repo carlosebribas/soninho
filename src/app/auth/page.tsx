@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { User } from '@supabase/supabase-js'
+import { AlertCircle } from 'lucide-react'
 
 export default function AuthPage() {
   const router = useRouter()
@@ -13,6 +14,12 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Verificar se o Supabase está configurado
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
+
     // Verificar se usuário já está logado
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
@@ -48,6 +55,54 @@ export default function AuthPage() {
 
   if (user) {
     return null // Redirecionando...
+  }
+
+  // Exibir mensagem se o Supabase não estiver configurado
+  if (!supabase) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 px-4">
+        <div className="w-full max-w-md">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8">
+            <div className="text-center mb-6">
+              <AlertCircle className="w-16 h-16 text-amber-500 mx-auto mb-4" />
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                Configuração Necessária
+              </h1>
+              <p className="text-gray-600 dark:text-gray-300 mb-6">
+                Para usar a autenticação, você precisa configurar o Supabase
+              </p>
+            </div>
+
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-6">
+              <h2 className="font-semibold text-gray-900 dark:text-white mb-3">
+                Passos para configurar:
+              </h2>
+              <ol className="text-sm text-gray-700 dark:text-gray-300 space-y-2 list-decimal list-inside">
+                <li>Crie uma conta gratuita em <a href="https://supabase.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium">supabase.com</a></li>
+                <li>Crie um novo projeto</li>
+                <li>Copie a URL e a chave anônima do projeto</li>
+                <li>Crie um arquivo <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded">.env.local</code> na raiz do projeto</li>
+                <li>Adicione as variáveis de ambiente</li>
+              </ol>
+            </div>
+
+            <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 font-mono text-xs overflow-x-auto">
+              <div className="text-gray-700 dark:text-gray-300">
+                NEXT_PUBLIC_SUPABASE_URL=sua-url-aqui<br />
+                NEXT_PUBLIC_SUPABASE_ANON_KEY=sua-chave-aqui
+              </div>
+            </div>
+
+            <button
+              onClick={() => router.push('/')}
+              className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-lg transition-colors"
+            >
+              Voltar para o início
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
