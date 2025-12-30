@@ -230,7 +230,9 @@ export default function AgendaPage() {
 
   const calcularDataSalto = (semanas: number): Date => {
     if (!dataNascimento) return new Date()
-    const nascimento = new Date(dataNascimento)
+    // Corrigir para evitar problemas de fuso horário
+    const [ano, mes, dia] = dataNascimento.split('-').map(Number)
+    const nascimento = new Date(ano, mes - 1, dia)
     const dataSalto = new Date(nascimento)
     dataSalto.setDate(dataSalto.getDate() + (semanas * 7))
     return dataSalto
@@ -296,8 +298,12 @@ export default function AgendaPage() {
   const calcularIdade = (dataEvento: string): string => {
     if (!dataNascimento) return ''
 
-    const nascimento = new Date(dataNascimento)
-    const evento = new Date(dataEvento)
+    // Corrigir para evitar problemas de fuso horário
+    const [anoNasc, mesNasc, diaNasc] = dataNascimento.split('-').map(Number)
+    const nascimento = new Date(anoNasc, mesNasc - 1, diaNasc)
+
+    const [anoEvento, mesEvento, diaEvento] = dataEvento.split('-').map(Number)
+    const evento = new Date(anoEvento, mesEvento - 1, diaEvento)
 
     // Calcular diferença em meses
     let meses = (evento.getFullYear() - nascimento.getFullYear()) * 12
