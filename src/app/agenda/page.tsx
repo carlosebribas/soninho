@@ -255,6 +255,75 @@ export default function AgendaPage() {
     return eventosVacinas
   }
 
+  const gerarEventosMesversarios = (dataNasc: string) => {
+    if (!dataNasc) return []
+
+    const [ano, mes, dia] = dataNasc.split('-').map(Number)
+    const nascimento = new Date(ano, mes - 1, dia)
+    const eventosMesversarios: Evento[] = []
+
+    // Gerar mesversários de 1 a 12 meses
+    for (let mesVida = 1; mesVida <= 12; mesVida++) {
+      const dataMesversario = new Date(nascimento)
+      dataMesversario.setMonth(dataMesversario.getMonth() + mesVida)
+      const dataFormatada = dataMesversario.toISOString().split('T')[0]
+
+      eventosMesversarios.push({
+        id: `mesversario-${mesVida}-${Date.now()}`,
+        tipo: 'outro',
+        titulo: `🎂 Mesversário - ${mesVida} ${mesVida === 1 ? 'mês' : 'meses'}`,
+        data: dataFormatada,
+        hora: '00:00',
+        observacoes: `Celebração de ${mesVida} ${mesVida === 1 ? 'mês' : 'meses'} de vida do bebê! 🎉`,
+        alertas: {
+          tresDias: true,
+          umDia: true,
+          umaHora: false
+        },
+        isPredefinido: true
+      })
+    }
+
+    return eventosMesversarios
+  }
+
+  const gerarEventosAniversarios = (dataNasc: string) => {
+    if (!dataNasc) return []
+
+    const [ano, mes, dia] = dataNasc.split('-').map(Number)
+    const nascimento = new Date(ano, mes - 1, dia)
+    const eventosAniversarios: Evento[] = []
+    const anoAtual = new Date().getFullYear()
+
+    // Gerar aniversários dos próximos 10 anos
+    for (let idade = 1; idade <= 10; idade++) {
+      const dataAniversario = new Date(nascimento)
+      dataAniversario.setFullYear(nascimento.getFullYear() + idade)
+
+      // Só adicionar se for ano atual ou futuro
+      if (dataAniversario.getFullYear() >= anoAtual) {
+        const dataFormatada = dataAniversario.toISOString().split('T')[0]
+
+        eventosAniversarios.push({
+          id: `aniversario-${idade}-${Date.now()}`,
+          tipo: 'outro',
+          titulo: `🎉 Aniversário - ${idade} ${idade === 1 ? 'ano' : 'anos'}`,
+          data: dataFormatada,
+          hora: '00:00',
+          observacoes: `Parabéns! O bebê está completando ${idade} ${idade === 1 ? 'ano' : 'anos'} de vida! 🎈🎁`,
+          alertas: {
+            tresDias: true,
+            umDia: true,
+            umaHora: false
+          },
+          isPredefinido: true
+        })
+      }
+    }
+
+    return eventosAniversarios
+  }
+
   useEffect(() => {
     // Carregar data de nascimento do cadastro
     const cadastro = localStorage.getItem('cadastroBebe')
@@ -262,24 +331,30 @@ export default function AgendaPage() {
       const dados = JSON.parse(cadastro)
       setDataNascimento(dados.dataNascimento)
 
-      // Verificar se já existem eventos de vacinação salvos
+      // Verificar se já existem eventos predefinidos gerados
       const eventosSalvos = localStorage.getItem('eventosAgenda')
-      const vacinacoesGeradas = localStorage.getItem('vacinacoesGeradas')
+      const eventosPredefinidosGerados = localStorage.getItem('eventosPredefinidosGerados')
 
-      if (!vacinacoesGeradas && dados.dataNascimento) {
-        // Gerar eventos de vacinação automaticamente
+      if (!eventosPredefinidosGerados && dados.dataNascimento) {
+        // Gerar todos os eventos predefinidos automaticamente
         const eventosVacinas = gerarEventosVacinacao(dados.dataNascimento)
+        const eventosMesversarios = gerarEventosMesversarios(dados.dataNascimento)
+        const eventosAniversarios = gerarEventosAniversarios(dados.dataNascimento)
 
-        // Se já existem eventos salvos, mesclar com as vacinas
-        let todosEventos = eventosVacinas
+        // Combinar todos os eventos predefinidos
+        let todosEventos = [...eventosVacinas, ...eventosMesversarios, ...eventosAniversarios]
+
+        // Se já existem eventos salvos (criados pelo usuário), mesclar
         if (eventosSalvos) {
           const eventosExistentes = JSON.parse(eventosSalvos)
-          todosEventos = [...eventosExistentes, ...eventosVacinas]
+          todosEventos = [...eventosExistentes, ...todosEventos]
         }
 
         setEventos(todosEventos)
         localStorage.setItem('eventosAgenda', JSON.stringify(todosEventos))
-        localStorage.setItem('vacinacoesGeradas', 'true')
+        localStorage.setItem('eventosPredefinidosGerados', 'true')
+        // Remover a flag antiga se existir
+        localStorage.removeItem('vacinacoesGeradas')
       } else if (eventosSalvos) {
         // Carregar eventos existentes
         setEventos(JSON.parse(eventosSalvos))
@@ -696,23 +771,26 @@ END:VCALENDAR`
             </div>
           </div>
 
-          {/* Info sobre Calendário de Vacinação */}
+          {/* Info sobre Eventos Automáticos */}
           {dataNascimento && eventos.some(e => e.isPredefinido) && (
-            <div className="mb-6 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+            <div className="mb-6 bg-gradient-to-r from-purple-50 via-pink-50 to-green-50 dark:from-purple-900/20 dark:via-pink-900/20 dark:to-green-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
               <div className="flex items-start gap-3">
-                <Syringe className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                <Calendar className="w-5 h-5 text-purple-600 dark:text-purple-400 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
                   <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-                    📋 Calendário Nacional de Vacinação
+                    ✨ Eventos Automáticos Adicionados!
                   </h3>
                   <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
-                    As vacinas do calendário oficial foram adicionadas automaticamente à agenda com base na data de nascimento do bebê!
+                    Com base na data de nascimento, estes eventos foram adicionados automaticamente:
                   </p>
                   <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-1 ml-4">
-                    <li>• Todas as vacinas seguem o <strong>Calendário Nacional de Vacinação do Ministério da Saúde</strong></li>
-                    <li>• As datas sugeridas são aproximadas - confirme com o pediatra</li>
-                    <li>• Você pode editar ou excluir qualquer evento conforme necessário</li>
+                    <li>• 💉 <strong>Vacinas:</strong> Todas do Calendário Nacional de Vacinação do Ministério da Saúde</li>
+                    <li>• 🎂 <strong>Mesversários:</strong> Celebração mensal de 1 a 12 meses de vida</li>
+                    <li>• 🎉 <strong>Aniversários:</strong> Comemorações anuais dos próximos 10 anos</li>
                   </ul>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-3">
+                    💡 Você pode editar ou excluir qualquer evento conforme necessário!
+                  </p>
                 </div>
               </div>
             </div>
@@ -963,13 +1041,15 @@ END:VCALENDAR`
                         <div
                           key={evento.id}
                           className={`flex flex-col text-xs rounded px-1 py-0.5 ${
-                            evento.tipo === 'vacina' && evento.isPredefinido
+                            evento.isPredefinido && (evento.titulo.includes('Mesversário') || evento.titulo.includes('Aniversário'))
+                              ? 'bg-gradient-to-r from-pink-100 to-purple-100 dark:from-pink-900/30 dark:to-purple-900/30 border border-pink-300 dark:border-pink-700'
+                              : evento.tipo === 'vacina' && evento.isPredefinido
                               ? 'bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700'
                               : evento.tipo === 'vacina'
                               ? 'bg-emerald-100 dark:bg-emerald-900/30'
                               : 'bg-blue-100 dark:bg-blue-900/30'
                           }`}
-                          title={`${evento.titulo} - ${evento.hora}${calcularIdade(evento.data) ? ` - ${calcularIdade(evento.data)}` : ''}${evento.isPredefinido ? ' (Calendário Nacional)' : ''}`}
+                          title={`${evento.titulo} - ${evento.hora}${calcularIdade(evento.data) ? ` - ${calcularIdade(evento.data)}` : ''}${evento.isPredefinido ? ' (Evento Automático)' : ''}`}
                         >
                           <div className="flex items-center">
                             {getIconeTipo(evento.tipo)}
@@ -1152,7 +1232,9 @@ END:VCALENDAR`
                     <div
                       key={evento.id}
                       className={`rounded-lg p-4 hover:shadow-lg transition-shadow ${
-                        evento.isPredefinido
+                        evento.isPredefinido && (evento.titulo.includes('Mesversário') || evento.titulo.includes('Aniversário'))
+                          ? 'bg-gradient-to-r from-pink-50 to-purple-50 dark:from-pink-900/20 dark:to-purple-900/20 border border-pink-200 dark:border-pink-700'
+                          : evento.isPredefinido
                           ? 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-700'
                           : 'bg-gray-50 dark:bg-gray-700'
                       }`}
@@ -1168,8 +1250,14 @@ END:VCALENDAR`
                                 {evento.titulo}
                               </h3>
                               {evento.isPredefinido && (
-                                <span className="text-xs bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full font-medium">
-                                  Calendário Nacional
+                                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                                  evento.titulo.includes('Mesversário') || evento.titulo.includes('Aniversário')
+                                    ? 'bg-pink-100 dark:bg-pink-900/40 text-pink-700 dark:text-pink-300'
+                                    : 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300'
+                                }`}>
+                                  {evento.titulo.includes('Mesversário') || evento.titulo.includes('Aniversário')
+                                    ? 'Celebração'
+                                    : 'Calendário Nacional'}
                                 </span>
                               )}
                             </div>
