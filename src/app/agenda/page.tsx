@@ -219,18 +219,17 @@ export default function AgendaPage() {
     if (!dataNasc) return []
 
     const [ano, mes, dia] = dataNasc.split('-').map(Number)
-    const nascimento = new Date(ano, mes - 1, dia)
     const eventosVacinas: Evento[] = []
 
     calendarioVacinacao.forEach((vacina, index) => {
-      const dataVacina = new Date(nascimento)
+      let dataVacina: Date
 
       if (vacina.idadeDias !== undefined) {
-        // Para vacinas ao nascer
-        dataVacina.setDate(dataVacina.getDate() + vacina.idadeDias)
+        // Para vacinas ao nascer - usar a data exata do nascimento
+        dataVacina = new Date(ano, mes - 1, dia + vacina.idadeDias)
       } else {
-        // Para vacinas com idade em meses
-        dataVacina.setMonth(dataVacina.getMonth() + vacina.idadeMeses)
+        // Para vacinas com idade em meses - manter sempre o mesmo dia do nascimento
+        dataVacina = new Date(ano, mes - 1 + vacina.idadeMeses, dia)
       }
 
       // Definir horário padrão: 08:00 para facilitar o agendamento
