@@ -1128,23 +1128,27 @@ END:VCALENDAR`
             </div>
           )}
 
-          {/* Lista de Eventos Próximos */}
+          {/* Lista de Eventos do Mês */}
           <div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-              Próximos Eventos
+              Eventos de {meses[mesAtual.getMonth()]} {mesAtual.getFullYear()}
             </h2>
-            {eventos.length === 0 ? (
-              <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-                <Calendar className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                <p>Nenhum evento agendado ainda.</p>
-                <p className="text-sm">Clique em "Novo Evento" para adicionar.</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {eventos
-                  .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())
-                  .slice(0, 5)
-                  .map((evento) => (
+            {(() => {
+              const eventosDoMes = eventos.filter(evento => {
+                const dataEvento = new Date(evento.data)
+                return dataEvento.getMonth() === mesAtual.getMonth() &&
+                       dataEvento.getFullYear() === mesAtual.getFullYear()
+              }).sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())
+
+              return eventosDoMes.length === 0 ? (
+                <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                  <Calendar className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                  <p>Nenhum evento agendado para este mês.</p>
+                  <p className="text-sm">Clique em "Novo Evento" para adicionar ou navegue pelos meses.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {eventosDoMes.map((evento) => (
                     <div
                       key={evento.id}
                       className={`rounded-lg p-4 hover:shadow-lg transition-shadow ${
@@ -1223,24 +1227,30 @@ END:VCALENDAR`
                       </div>
                     </div>
                   ))}
-              </div>
-            )}
+                </div>
+              )
+            })()}
           </div>
 
-          {/* Próximos Saltos de Desenvolvimento */}
+          {/* Saltos de Desenvolvimento do Mês */}
           {dataNascimento && (
             <div className="mt-8">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                Próximos Saltos de Desenvolvimento
+                Saltos de Desenvolvimento - {meses[mesAtual.getMonth()]} {mesAtual.getFullYear()}
               </h2>
               <div className="space-y-3">
-                {saltosDesenvolvimento
-                  .filter(salto => {
-                    const dataSalto = calcularDataSalto(salto.semanas)
-                    return dataSalto >= new Date()
-                  })
-                  .slice(0, 5)
-                  .map((salto, index) => {
+                {(() => {
+                  const saltosDoMes = getSaltosDoMes(mesAtual)
+
+                  return saltosDoMes.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                      <Baby className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                      <p className="text-sm">
+                        Nenhum salto de desenvolvimento previsto para este mês.
+                      </p>
+                    </div>
+                  ) : (
+                    saltosDoMes.map((salto, index) => {
                     const dataInicio = calcularDataSalto(salto.semanas)
                     const dataFim = new Date(dataInicio)
                     dataFim.setDate(dataFim.getDate() + salto.duracaoDias)
