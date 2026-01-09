@@ -290,15 +290,14 @@ export default function AgendaPage() {
     if (!dataNasc) return []
 
     const [ano, mes, dia] = dataNasc.split('-').map(Number)
-    const nascimento = new Date(ano, mes - 1, dia)
     const eventosAniversarios: Evento[] = []
     const hoje = new Date()
     hoje.setHours(0, 0, 0, 0) // Zerar horas para comparação apenas de data
 
     // Gerar aniversários dos próximos 10 anos
     for (let idade = 1; idade <= 10; idade++) {
-      const dataAniversario = new Date(nascimento)
-      dataAniversario.setFullYear(nascimento.getFullYear() + idade)
+      // Criar data do aniversário mantendo dia e mês do nascimento
+      const dataAniversario = new Date(ano + idade, mes - 1, dia)
       dataAniversario.setHours(0, 0, 0, 0)
 
       // Adicionar se a data do aniversário for hoje ou no futuro
@@ -573,6 +572,35 @@ export default function AgendaPage() {
     localStorage.setItem('eventosAgenda', JSON.stringify(novosEventos))
   }
 
+  const regenerarEventosAutomaticos = () => {
+    if (!dataNascimento) {
+      alert('Não há data de nascimento cadastrada!')
+      return
+    }
+
+    const confirmacao = window.confirm(
+      '⚠️ Isso irá remover todos os eventos automáticos (vacinas, mesversários e aniversários) e recriá-los com base na data de nascimento atual.\n\nEventos criados manualmente por você serão mantidos.\n\nDeseja continuar?'
+    )
+
+    if (!confirmacao) return
+
+    // Filtrar apenas eventos criados pelo usuário (não predefinidos)
+    const eventosUsuario = eventos.filter(e => !e.isPredefinido)
+
+    // Gerar novos eventos automáticos
+    const eventosVacinas = gerarEventosVacinacao(dataNascimento)
+    const eventosMesversarios = gerarEventosMesversarios(dataNascimento)
+    const eventosAniversarios = gerarEventosAniversarios(dataNascimento)
+
+    // Combinar eventos do usuário com novos eventos automáticos
+    const todosEventos = [...eventosUsuario, ...eventosVacinas, ...eventosMesversarios, ...eventosAniversarios]
+
+    setEventos(todosEventos)
+    localStorage.setItem('eventosAgenda', JSON.stringify(todosEventos))
+
+    alert('✅ Eventos automáticos regenerados com sucesso!')
+  }
+
   const formatarDataParaICS = (data: string, hora: string): string => {
     const dataObj = new Date(`${data}T${hora}`)
     return dataObj.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
@@ -749,6 +777,16 @@ END:VCALENDAR`
               </h1>
             </div>
             <div className="flex gap-3 flex-wrap">
+              {dataNascimento && eventos.some(e => e.isPredefinido) && (
+                <button
+                  onClick={regenerarEventosAutomaticos}
+                  className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white px-4 py-3 rounded-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-xl flex items-center text-sm"
+                  title="Regenerar eventos automáticos (vacinas, mesversários e aniversários)"
+                >
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Regenerar Eventos
+                </button>
+              )}
               <button
                 onClick={exportarTodosEventos}
                 disabled={eventos.length === 0}
