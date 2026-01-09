@@ -233,7 +233,7 @@ export default function AgendaPage() {
         dataVacina.setMonth(dataVacina.getMonth() + vacina.idadeMeses)
       }
 
-      // Definir horário padrão: 10:00 para facilitar o agendamento
+      // Definir horário padrão: 08:00 para facilitar o agendamento
       const dataFormatada = dataVacina.toISOString().split('T')[0]
 
       eventosVacinas.push({
@@ -241,7 +241,7 @@ export default function AgendaPage() {
         tipo: 'vacina',
         titulo: `💉 ${vacina.nome} - ${vacina.dose}`,
         data: dataFormatada,
-        hora: '10:00',
+        hora: '08:00',
         observacoes: vacina.observacoes,
         alertas: {
           tresDias: true,
@@ -273,7 +273,7 @@ export default function AgendaPage() {
         tipo: 'outro',
         titulo: `🎂 Mesversário - ${mesVida} ${mesVida === 1 ? 'mês' : 'meses'}`,
         data: dataFormatada,
-        hora: '00:00',
+        hora: '08:00',
         observacoes: `Celebração de ${mesVida} ${mesVida === 1 ? 'mês' : 'meses'} de vida do bebê! 🎉`,
         alertas: {
           tresDias: true,
@@ -293,15 +293,17 @@ export default function AgendaPage() {
     const [ano, mes, dia] = dataNasc.split('-').map(Number)
     const nascimento = new Date(ano, mes - 1, dia)
     const eventosAniversarios: Evento[] = []
-    const anoAtual = new Date().getFullYear()
+    const hoje = new Date()
+    hoje.setHours(0, 0, 0, 0) // Zerar horas para comparação apenas de data
 
     // Gerar aniversários dos próximos 10 anos
     for (let idade = 1; idade <= 10; idade++) {
       const dataAniversario = new Date(nascimento)
       dataAniversario.setFullYear(nascimento.getFullYear() + idade)
+      dataAniversario.setHours(0, 0, 0, 0)
 
-      // Só adicionar se for ano atual ou futuro
-      if (dataAniversario.getFullYear() >= anoAtual) {
+      // Adicionar se a data do aniversário for hoje ou no futuro
+      if (dataAniversario >= hoje) {
         const dataFormatada = dataAniversario.toISOString().split('T')[0]
 
         eventosAniversarios.push({
@@ -309,7 +311,7 @@ export default function AgendaPage() {
           tipo: 'outro',
           titulo: `🎉 Aniversário - ${idade} ${idade === 1 ? 'ano' : 'anos'}`,
           data: dataFormatada,
-          hora: '00:00',
+          hora: '08:00',
           observacoes: `Parabéns! O bebê está completando ${idade} ${idade === 1 ? 'ano' : 'anos'} de vida! 🎈🎁`,
           alertas: {
             tresDias: true,
