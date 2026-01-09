@@ -259,13 +259,12 @@ export default function AgendaPage() {
     if (!dataNasc) return []
 
     const [ano, mes, dia] = dataNasc.split('-').map(Number)
-    const nascimento = new Date(ano, mes - 1, dia)
     const eventosMesversarios: Evento[] = []
 
     // Gerar mesversários de 1 a 11 meses (o 12º mês será o primeiro aniversário)
     for (let mesVida = 1; mesVida <= 11; mesVida++) {
-      const dataMesversario = new Date(nascimento)
-      dataMesversario.setMonth(dataMesversario.getMonth() + mesVida)
+      // Criar data mantendo o mesmo dia do nascimento
+      const dataMesversario = new Date(ano, mes - 1 + mesVida, dia)
       const dataFormatada = dataMesversario.toISOString().split('T')[0]
 
       eventosMesversarios.push({
