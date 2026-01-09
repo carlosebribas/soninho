@@ -262,8 +262,8 @@ export default function AgendaPage() {
     const nascimento = new Date(ano, mes - 1, dia)
     const eventosMesversarios: Evento[] = []
 
-    // Gerar mesversários de 1 a 12 meses
-    for (let mesVida = 1; mesVida <= 12; mesVida++) {
+    // Gerar mesversários de 1 a 11 meses (o 12º mês será o primeiro aniversário)
+    for (let mesVida = 1; mesVida <= 11; mesVida++) {
       const dataMesversario = new Date(nascimento)
       dataMesversario.setMonth(dataMesversario.getMonth() + mesVida)
       const dataFormatada = dataMesversario.toISOString().split('T')[0]
@@ -785,7 +785,7 @@ END:VCALENDAR`
                   </p>
                   <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-1 ml-4">
                     <li>• 💉 <strong>Vacinas:</strong> Todas do Calendário Nacional de Vacinação do Ministério da Saúde</li>
-                    <li>• 🎂 <strong>Mesversários:</strong> Celebração mensal de 1 a 12 meses de vida</li>
+                    <li>• 🎂 <strong>Mesversários:</strong> Celebração mensal do 1º ao 11º mês de vida</li>
                     <li>• 🎉 <strong>Aniversários:</strong> Comemorações anuais dos próximos 10 anos</li>
                   </ul>
                   <p className="text-xs text-gray-600 dark:text-gray-400 mt-3">
