@@ -1285,16 +1285,10 @@ END:VCALENDAR`
                         </div>
                       </button>
                     )
-                  })}
+                  })
+                  )
+                })()}
               </div>
-              {saltosDesenvolvimento.filter(salto => calcularDataSalto(salto.semanas) >= new Date()).length === 0 && (
-                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                  <Baby className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <p className="text-sm">
-                    Todos os saltos de desenvolvimento foram concluídos! 🎉
-                  </p>
-                </div>
-              )}
             </div>
           )}
         </div>
