@@ -16,6 +16,15 @@ interface Evento {
     umDia: boolean
     umaHora: boolean
   }
+  isPredefinido?: boolean
+}
+
+interface Vacina {
+  nome: string
+  dose: string
+  idadeMeses: number
+  idadeDias?: number
+  observacoes: string
 }
 
 interface SaltoDesenvolvimento {
@@ -55,6 +64,59 @@ export default function AgendaPage() {
       umaHora: true
     }
   })
+
+  // Calendário Nacional de Vacinação - Criança
+  const calendarioVacinacao: Vacina[] = [
+    // Ao nascer
+    { nome: 'BCG', dose: 'Dose única', idadeMeses: 0, idadeDias: 0, observacoes: 'Proteção contra formas graves de tuberculose. Aplicada na maternidade.' },
+    { nome: 'Hepatite B', dose: '1ª dose', idadeMeses: 0, idadeDias: 0, observacoes: 'Primeira dose ao nascer. Proteção contra hepatite B.' },
+
+    // 2 meses
+    { nome: 'Pentavalente', dose: '1ª dose', idadeMeses: 2, observacoes: 'Protege contra difteria, tétano, coqueluche, hepatite B e Haemophilus influenzae tipo B.' },
+    { nome: 'VIP (Poliomielite inativada)', dose: '1ª dose', idadeMeses: 2, observacoes: 'Proteção contra poliomielite (paralisia infantil).' },
+    { nome: 'Pneumocócica 10', dose: '1ª dose', idadeMeses: 2, observacoes: 'Proteção contra pneumonia, meningite e otite.' },
+    { nome: 'Rotavírus', dose: '1ª dose', idadeMeses: 2, observacoes: 'Proteção contra diarreia por rotavírus. Limite: até 3 meses e 15 dias.' },
+
+    // 3 meses
+    { nome: 'Meningocócica C', dose: '1ª dose', idadeMeses: 3, observacoes: 'Proteção contra meningite meningocócica tipo C.' },
+
+    // 4 meses
+    { nome: 'Pentavalente', dose: '2ª dose', idadeMeses: 4, observacoes: 'Segunda dose da vacina que protege contra 5 doenças.' },
+    { nome: 'VIP (Poliomielite inativada)', dose: '2ª dose', idadeMeses: 4, observacoes: 'Segunda dose contra poliomielite.' },
+    { nome: 'Pneumocócica 10', dose: '2ª dose', idadeMeses: 4, observacoes: 'Segunda dose contra pneumonia e meningite.' },
+    { nome: 'Rotavírus', dose: '2ª dose', idadeMeses: 4, observacoes: 'Segunda dose contra diarreia. Limite: até 7 meses e 29 dias.' },
+
+    // 5 meses
+    { nome: 'Meningocócica C', dose: '2ª dose', idadeMeses: 5, observacoes: 'Segunda dose contra meningite tipo C.' },
+
+    // 6 meses
+    { nome: 'Pentavalente', dose: '3ª dose', idadeMeses: 6, observacoes: 'Terceira dose da pentavalente.' },
+    { nome: 'VIP (Poliomielite inativada)', dose: '3ª dose', idadeMeses: 6, observacoes: 'Terceira dose contra poliomielite.' },
+
+    // 9 meses
+    { nome: 'Febre Amarela', dose: 'Dose inicial', idadeMeses: 9, observacoes: 'Proteção contra febre amarela. Recomendada para todo o Brasil.' },
+
+    // 12 meses (1 ano)
+    { nome: 'Tríplice Viral (SCR)', dose: '1ª dose', idadeMeses: 12, observacoes: 'Proteção contra sarampo, caxumba e rubéola.' },
+    { nome: 'Pneumocócica 10', dose: 'Reforço', idadeMeses: 12, observacoes: 'Dose de reforço contra pneumonia e meningite.' },
+    { nome: 'Meningocócica C', dose: 'Reforço', idadeMeses: 12, observacoes: 'Dose de reforço contra meningite tipo C.' },
+
+    // 15 meses (1 ano e 3 meses)
+    { nome: 'Tetraviral (SCR-V)', dose: 'Dose única', idadeMeses: 15, observacoes: 'Proteção contra sarampo, caxumba, rubéola e varicela (catapora).' },
+    { nome: 'Hepatite A', dose: 'Dose única', idadeMeses: 15, observacoes: 'Proteção contra hepatite A.' },
+    { nome: 'DTP', dose: '1º reforço', idadeMeses: 15, observacoes: 'Primeiro reforço contra difteria, tétano e coqueluche.' },
+    { nome: 'VOP (Poliomielite oral)', dose: '1º reforço', idadeMeses: 15, observacoes: 'Primeiro reforço contra poliomielite (gotinha).' },
+
+    // 4 anos
+    { nome: 'DTP', dose: '2º reforço', idadeMeses: 48, observacoes: 'Segundo reforço contra difteria, tétano e coqueluche.' },
+    { nome: 'VOP (Poliomielite oral)', dose: '2º reforço', idadeMeses: 48, observacoes: 'Segundo reforço contra poliomielite (gotinha).' },
+    { nome: 'Febre Amarela', dose: 'Reforço', idadeMeses: 48, observacoes: 'Dose de reforço contra febre amarela.' },
+    { nome: 'Varicela', dose: 'Reforço', idadeMeses: 48, observacoes: 'Dose de reforço contra catapora (se não tomou a Tetraviral).' },
+
+    // 9 anos (meninas)
+    { nome: 'HPV', dose: '1ª dose', idadeMeses: 108, observacoes: 'Proteção contra HPV. Para meninas de 9 a 14 anos e meninos de 11 a 14 anos.' },
+    { nome: 'HPV', dose: '2ª dose', idadeMeses: 114, observacoes: 'Segunda dose do HPV (6 meses após a primeira dose).' }
+  ]
 
   const saltosDesenvolvimento: SaltoDesenvolvimento[] = [
     // Primeiro Ano - Os 10 saltos clássicos
@@ -153,18 +215,81 @@ export default function AgendaPage() {
     }
   ]
 
-  useEffect(() => {
-    // Carregar eventos do localStorage
-    const eventossalvos = localStorage.getItem('eventosAgenda')
-    if (eventossalvos) {
-      setEventos(JSON.parse(eventossalvos))
-    }
+  const gerarEventosVacinacao = (dataNasc: string) => {
+    if (!dataNasc) return []
 
+    const [ano, mes, dia] = dataNasc.split('-').map(Number)
+    const nascimento = new Date(ano, mes - 1, dia)
+    const eventosVacinas: Evento[] = []
+
+    calendarioVacinacao.forEach((vacina, index) => {
+      const dataVacina = new Date(nascimento)
+
+      if (vacina.idadeDias !== undefined) {
+        // Para vacinas ao nascer
+        dataVacina.setDate(dataVacina.getDate() + vacina.idadeDias)
+      } else {
+        // Para vacinas com idade em meses
+        dataVacina.setMonth(dataVacina.getMonth() + vacina.idadeMeses)
+      }
+
+      // Definir horário padrão: 10:00 para facilitar o agendamento
+      const dataFormatada = dataVacina.toISOString().split('T')[0]
+
+      eventosVacinas.push({
+        id: `vacina-${index}-${Date.now()}`,
+        tipo: 'vacina',
+        titulo: `💉 ${vacina.nome} - ${vacina.dose}`,
+        data: dataFormatada,
+        hora: '10:00',
+        observacoes: vacina.observacoes,
+        alertas: {
+          tresDias: true,
+          umDia: true,
+          umaHora: true
+        },
+        isPredefinido: true
+      })
+    })
+
+    return eventosVacinas
+  }
+
+  useEffect(() => {
     // Carregar data de nascimento do cadastro
     const cadastro = localStorage.getItem('cadastroBebe')
     if (cadastro) {
       const dados = JSON.parse(cadastro)
       setDataNascimento(dados.dataNascimento)
+
+      // Verificar se já existem eventos de vacinação salvos
+      const eventosSalvos = localStorage.getItem('eventosAgenda')
+      const vacinacoesGeradas = localStorage.getItem('vacinacoesGeradas')
+
+      if (!vacinacoesGeradas && dados.dataNascimento) {
+        // Gerar eventos de vacinação automaticamente
+        const eventosVacinas = gerarEventosVacinacao(dados.dataNascimento)
+
+        // Se já existem eventos salvos, mesclar com as vacinas
+        let todosEventos = eventosVacinas
+        if (eventosSalvos) {
+          const eventosExistentes = JSON.parse(eventosSalvos)
+          todosEventos = [...eventosExistentes, ...eventosVacinas]
+        }
+
+        setEventos(todosEventos)
+        localStorage.setItem('eventosAgenda', JSON.stringify(todosEventos))
+        localStorage.setItem('vacinacoesGeradas', 'true')
+      } else if (eventosSalvos) {
+        // Carregar eventos existentes
+        setEventos(JSON.parse(eventosSalvos))
+      }
+    } else {
+      // Carregar apenas eventos salvos se não houver cadastro
+      const eventosSalvos = localStorage.getItem('eventosAgenda')
+      if (eventosSalvos) {
+        setEventos(JSON.parse(eventosSalvos))
+      }
     }
   }, [])
 
@@ -571,6 +696,28 @@ END:VCALENDAR`
             </div>
           </div>
 
+          {/* Info sobre Calendário de Vacinação */}
+          {dataNascimento && eventos.some(e => e.isPredefinido) && (
+            <div className="mb-6 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <Syringe className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+                    📋 Calendário Nacional de Vacinação
+                  </h3>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                    As vacinas do calendário oficial foram adicionadas automaticamente à agenda com base na data de nascimento do bebê!
+                  </p>
+                  <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-1 ml-4">
+                    <li>• Todas as vacinas seguem o <strong>Calendário Nacional de Vacinação do Ministério da Saúde</strong></li>
+                    <li>• As datas sugeridas são aproximadas - confirme com o pediatra</li>
+                    <li>• Você pode editar ou excluir qualquer evento conforme necessário</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Info sobre Integração */}
           <div className="mb-8 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
             <div className="flex items-start gap-3">
@@ -815,8 +962,14 @@ END:VCALENDAR`
                       {eventosDoDia.map(evento => (
                         <div
                           key={evento.id}
-                          className="flex flex-col text-xs bg-blue-100 dark:bg-blue-900/30 rounded px-1 py-0.5"
-                          title={`${evento.titulo} - ${evento.hora}${calcularIdade(evento.data) ? ` - ${calcularIdade(evento.data)}` : ''}`}
+                          className={`flex flex-col text-xs rounded px-1 py-0.5 ${
+                            evento.tipo === 'vacina' && evento.isPredefinido
+                              ? 'bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700'
+                              : evento.tipo === 'vacina'
+                              ? 'bg-emerald-100 dark:bg-emerald-900/30'
+                              : 'bg-blue-100 dark:bg-blue-900/30'
+                          }`}
+                          title={`${evento.titulo} - ${evento.hora}${calcularIdade(evento.data) ? ` - ${calcularIdade(evento.data)}` : ''}${evento.isPredefinido ? ' (Calendário Nacional)' : ''}`}
                         >
                           <div className="flex items-center">
                             {getIconeTipo(evento.tipo)}
@@ -992,16 +1145,30 @@ END:VCALENDAR`
                   .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())
                   .slice(0, 5)
                   .map((evento) => (
-                    <div key={evento.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 hover:shadow-lg transition-shadow">
+                    <div
+                      key={evento.id}
+                      className={`rounded-lg p-4 hover:shadow-lg transition-shadow ${
+                        evento.isPredefinido
+                          ? 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-700'
+                          : 'bg-gray-50 dark:bg-gray-700'
+                      }`}
+                    >
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center flex-1">
                           <div className="mr-4">
                             {getIconeTipo(evento.tipo)}
                           </div>
                           <div className="flex-1">
-                            <h3 className="font-semibold text-gray-900 dark:text-white">
-                              {evento.titulo}
-                            </h3>
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="font-semibold text-gray-900 dark:text-white">
+                                {evento.titulo}
+                              </h3>
+                              {evento.isPredefinido && (
+                                <span className="text-xs bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full font-medium">
+                                  Calendário Nacional
+                                </span>
+                              )}
+                            </div>
                             <p className="text-sm text-gray-600 dark:text-gray-300">
                               {new Date(evento.data).toLocaleDateString('pt-BR')} às {evento.hora}
                               {calcularIdade(evento.data) && (
