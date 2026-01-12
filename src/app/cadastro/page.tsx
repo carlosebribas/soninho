@@ -1,10 +1,13 @@
 'use client'
 
-import { useState } from 'react'
-import { ArrowLeft, Save, Baby } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { ArrowLeft, Save, Baby, Edit } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 export default function CadastroPage() {
+  const router = useRouter()
+  const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState({
     nome: '',
     dataNascimento: '',
@@ -18,6 +21,15 @@ export default function CadastroPage() {
     hospitalReferencia: ''
   })
 
+  useEffect(() => {
+    // Carregar dados salvos do localStorage
+    const saved = localStorage.getItem('cadastroBebe')
+    if (saved) {
+      setFormData(JSON.parse(saved))
+      setIsEditing(true)
+    }
+  }, [])
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
@@ -29,7 +41,8 @@ export default function CadastroPage() {
     e.preventDefault()
     // Salvar no localStorage
     localStorage.setItem('cadastroBebe', JSON.stringify(formData))
-    alert('Cadastro salvo com sucesso!')
+    alert(isEditing ? 'Cadastro atualizado com sucesso!' : 'Cadastro salvo com sucesso!')
+    router.push('/')
   }
 
   return (
@@ -48,9 +61,16 @@ export default function CadastroPage() {
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 max-w-3xl mx-auto">
           <div className="flex items-center justify-center mb-8">
             <Baby className="w-12 h-12 text-purple-600 dark:text-purple-400 mr-4" />
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Cadastro do Bebê
-            </h1>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                {isEditing ? 'Editar Dados do Bebê' : 'Cadastro do Bebê'}
+              </h1>
+              {isEditing && (
+                <p className="text-sm text-gray-600 dark:text-gray-400 text-center mt-1">
+                  Atualize as informações conforme necessário
+                </p>
+              )}
+            </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
