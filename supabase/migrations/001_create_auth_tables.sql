@@ -1,3 +1,5 @@
+-- Migration: Create auth and subscription tables
+-- Created: 2025-01-12
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
