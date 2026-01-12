@@ -33,8 +33,7 @@ const plans: Plan[] = [
     features: [
       'Registro ilimitado de sonecas',
       'Alertas personalizados',
-      'Relatórios básicos',
-      'Suporte por email'
+      'Relatórios básicos'
     ]
   },
   {
@@ -51,29 +50,8 @@ const plans: Plan[] = [
       'Tudo do plano Básico',
       'Recomendações personalizadas com IA',
       'Análises avançadas e insights',
-      'Múltiplos bebês',
-      'Exportação de dados',
-      'Suporte prioritário',
+      'Exportação de dados (CSV e PDF)',
       'Acesso à comunidade premium'
-    ]
-  },
-  {
-    id: 'premium',
-    name: 'Premium',
-    price: 54.90,
-    originalPrice: 79.90,
-    period: 'mês',
-    badge: 'MELHOR VALOR',
-    badgeColor: 'bg-gradient-to-r from-amber-500 to-orange-600',
-    icon: Sparkles,
-    features: [
-      'Tudo do plano Pro',
-      'Consultoria 1-1 com especialista',
-      'Plano de sono personalizado',
-      'Relatórios semanais detalhados',
-      'Acesso antecipado a novos recursos',
-      'Suporte 24/7',
-      'Garantia de satisfação de 30 dias'
     ]
   }
 ]
@@ -149,7 +127,7 @@ export default function CheckoutPage() {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Plans Section */}
           <div className="lg:col-span-2">
-            <div className="grid sm:grid-cols-3 gap-4 mb-8">
+            <div className="grid sm:grid-cols-2 gap-6 mb-8">
               {plans.map((plan) => {
                 const Icon = plan.icon
                 return (
