@@ -3,7 +3,10 @@
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { TrendingUp, Target, Clock, Zap } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { TrendingUp, Target, Clock, Zap, Download, FileText } from 'lucide-react'
+import { format } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 import { BackButton } from '@/components/BackButton'
 
 interface SleepEntry {
@@ -112,6 +115,183 @@ export default function Recomendacoes() {
 
   const stats = getSleepStats()
 
+  const exportRecommendationsToPDF = () => {
+    if (recommendations.length === 0) {
+      alert('Não há recomendações para exportar!')
+      return
+    }
+
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) return
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Recomendações Personalizadas - SONINHO</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+          }
+          h1 {
+            color: #EA580C;
+            text-align: center;
+            margin-bottom: 10px;
+          }
+          .subtitle {
+            text-align: center;
+            color: #6B7280;
+            margin-bottom: 30px;
+          }
+          .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+          }
+          .stat-card {
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+          }
+          .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #EA580C;
+          }
+          .stat-label {
+            color: #6B7280;
+            font-size: 14px;
+            margin-top: 5px;
+          }
+          .recommendations {
+            margin: 30px 0;
+          }
+          .recommendation {
+            background-color: #FFF7ED;
+            border-left: 4px solid #EA580C;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+          }
+          .recommendation-number {
+            display: inline-block;
+            background-color: #EA580C;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 28px;
+            font-weight: bold;
+            margin-right: 10px;
+          }
+          .tips-section {
+            margin-top: 40px;
+          }
+          .tips-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+          }
+          .tips-card {
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 15px;
+          }
+          .tips-card h3 {
+            color: #EA580C;
+            margin-bottom: 10px;
+          }
+          .tips-card ul {
+            list-style: none;
+            padding: 0;
+          }
+          .tips-card li {
+            margin-bottom: 8px;
+            color: #4B5563;
+          }
+          .footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #6B7280;
+            font-size: 12px;
+          }
+          @media print {
+            body { padding: 0; }
+          }
+        </style>
+      </head>
+      <body>
+        <h1>🌙 SONINHO - Recomendações Personalizadas</h1>
+        <p class="subtitle">Gerado em: ${format(new Date(), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}</p>
+
+        ${stats ? `
+          <div class="stats">
+            <div class="stat-card">
+              <div class="stat-value">${stats.avgSleep.toFixed(1)}h</div>
+              <div class="stat-label">Média de Sono</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">${stats.entriesCount}</div>
+              <div class="stat-label">Registros Analisados</div>
+            </div>
+          </div>
+        ` : ''}
+
+        <div class="recommendations">
+          <h2 style="color: #EA580C;">💡 Suas Recomendações</h2>
+          ${recommendations.map((rec, index) => `
+            <div class="recommendation">
+              <span class="recommendation-number">${index + 1}</span>
+              <span>${rec}</span>
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="tips-section">
+          <div class="tips-grid">
+            <div class="tips-card">
+              <h3>🎯 Próximos Passos</h3>
+              <ul>
+                <li>• Mantenha registros diários consistentes</li>
+                <li>• Observe padrões de humor e energia</li>
+                <li>• Ajuste a rotina gradualmente</li>
+                <li>• Consulte um pediatra se necessário</li>
+              </ul>
+            </div>
+
+            <div class="tips-card">
+              <h3>📚 Dicas Gerais</h3>
+              <ul>
+                <li>• Ambiente escuro e silencioso</li>
+                <li>• Temperatura entre 20-22°C</li>
+                <li>• Rotina consistente antes de dormir</li>
+                <li>• Evite telas 1 hora antes</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="footer">
+          <p>Relatório gerado automaticamente pelo SONINHO - Gerenciador Inteligente de Cochilos</p>
+        </div>
+      </body>
+      </html>
+    `
+
+    printWindow.document.write(htmlContent)
+    printWindow.document.close()
+
+    setTimeout(() => {
+      printWindow.print()
+    }, 250)
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-100 p-4">
       <div className="max-w-4xl mx-auto">
@@ -122,6 +302,17 @@ export default function Recomendacoes() {
             Recomendações Personalizadas
           </h1>
           <p className="text-gray-600">Sugestões baseadas nos dados do seu bebê</p>
+
+          <div className="mt-4 flex justify-center">
+            <Button
+              onClick={exportRecommendationsToPDF}
+              variant="outline"
+              className="flex items-center gap-2 bg-orange-50 hover:bg-orange-100 border-orange-300 text-orange-700"
+            >
+              <FileText className="w-4 h-4" />
+              Exportar Recomendações (PDF)
+            </Button>
+          </div>
         </div>
 
         {stats && (

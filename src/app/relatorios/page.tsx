@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
-import { TrendingUp, Calendar, Clock, Moon } from 'lucide-react'
+import { TrendingUp, Calendar, Clock, Moon, Download, FileText } from 'lucide-react'
 import { format, subDays, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { BackButton } from '@/components/BackButton'
@@ -139,6 +139,196 @@ export default function Relatorios() {
   const moodData = getMoodDistribution()
   const stats = getStats()
 
+  const exportToCSV = () => {
+    const filtered = getFilteredEntries()
+    if (filtered.length === 0) {
+      alert('Não há dados para exportar!')
+      return
+    }
+
+    // Create CSV content
+    const headers = ['Data', 'Hora Início', 'Hora Fim', 'Duração (horas)', 'Humor', 'Observações']
+    const rows = filtered.map(entry => {
+      const start = new Date(`2000-01-01T${entry.startTime}`)
+      const end = new Date(`2000-01-01T${entry.endTime}`)
+      const duration = ((end.getTime() - start.getTime()) / (1000 * 60 * 60)).toFixed(1)
+
+      return [
+        format(new Date(entry.date), 'dd/MM/yyyy', { locale: ptBR }),
+        entry.startTime,
+        entry.endTime,
+        duration,
+        entry.mood || 'N/A',
+        entry.notes || ''
+      ]
+    })
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n')
+
+    // Download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `relatorio-sono-${format(new Date(), 'yyyy-MM-dd')}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  const exportToPDF = () => {
+    const filtered = getFilteredEntries()
+    if (filtered.length === 0) {
+      alert('Não há dados para exportar!')
+      return
+    }
+
+    // Create printable HTML content
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) return
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Relatório de Sono - SONINHO</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+          }
+          h1 {
+            color: #4F46E5;
+            text-align: center;
+            margin-bottom: 10px;
+          }
+          .subtitle {
+            text-align: center;
+            color: #6B7280;
+            margin-bottom: 30px;
+          }
+          .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+          }
+          .stat-card {
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+          }
+          .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4F46E5;
+          }
+          .stat-label {
+            color: #6B7280;
+            font-size: 14px;
+            margin-top: 5px;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+          }
+          th, td {
+            border: 1px solid #E5E7EB;
+            padding: 12px;
+            text-align: left;
+          }
+          th {
+            background-color: #4F46E5;
+            color: white;
+          }
+          tr:nth-child(even) {
+            background-color: #F9FAFB;
+          }
+          .footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #6B7280;
+            font-size: 12px;
+          }
+          @media print {
+            body { padding: 0; }
+          }
+        </style>
+      </head>
+      <body>
+        <h1>🌙 SONINHO - Relatório de Sono</h1>
+        <p class="subtitle">Período: ${format(new Date(), 'dd/MM/yyyy', { locale: ptBR })}</p>
+
+        ${stats ? `
+          <div class="stats">
+            <div class="stat-card">
+              <div class="stat-value">${stats.entriesCount}</div>
+              <div class="stat-label">Registros</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">${stats.avgSleep}h</div>
+              <div class="stat-label">Média/dia</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">${stats.totalSleep}h</div>
+              <div class="stat-label">Total</div>
+            </div>
+          </div>
+        ` : ''}
+
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Início</th>
+              <th>Fim</th>
+              <th>Duração</th>
+              <th>Humor</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered.map(entry => {
+              const start = new Date(`2000-01-01T${entry.startTime}`)
+              const end = new Date(`2000-01-01T${entry.endTime}`)
+              const duration = ((end.getTime() - start.getTime()) / (1000 * 60 * 60)).toFixed(1)
+
+              return `
+                <tr>
+                  <td>${format(new Date(entry.date), 'dd/MM/yyyy', { locale: ptBR })}</td>
+                  <td>${entry.startTime}</td>
+                  <td>${entry.endTime}</td>
+                  <td>${duration}h</td>
+                  <td>${entry.mood || 'N/A'}</td>
+                </tr>
+              `
+            }).join('')}
+          </tbody>
+        </table>
+
+        <div class="footer">
+          <p>Relatório gerado automaticamente pelo SONINHO - Gerenciador Inteligente de Cochilos</p>
+        </div>
+      </body>
+      </html>
+    `
+
+    printWindow.document.write(htmlContent)
+    printWindow.document.close()
+
+    // Wait for content to load before printing
+    setTimeout(() => {
+      printWindow.print()
+    }, 250)
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="max-w-6xl mx-auto">
@@ -151,7 +341,7 @@ export default function Relatorios() {
           <p className="text-gray-600">Gráficos e estatísticas sobre os padrões de sono</p>
         </div>
 
-        <div className="mb-6 flex justify-center">
+        <div className="mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
           <Select value={timeRange} onValueChange={(value: '7d' | '30d' | '90d') => setTimeRange(value)}>
             <SelectTrigger className="w-48">
               <SelectValue />
@@ -162,6 +352,25 @@ export default function Relatorios() {
               <SelectItem value="90d">Últimos 90 dias</SelectItem>
             </SelectContent>
           </Select>
+
+          <div className="flex gap-3">
+            <Button
+              onClick={exportToCSV}
+              variant="outline"
+              className="flex items-center gap-2 bg-green-50 hover:bg-green-100 border-green-300 text-green-700"
+            >
+              <Download className="w-4 h-4" />
+              Exportar CSV
+            </Button>
+            <Button
+              onClick={exportToPDF}
+              variant="outline"
+              className="flex items-center gap-2 bg-red-50 hover:bg-red-100 border-red-300 text-red-700"
+            >
+              <FileText className="w-4 h-4" />
+              Exportar PDF
+            </Button>
+          </div>
         </div>
 
         {stats && (
