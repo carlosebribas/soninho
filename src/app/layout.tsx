@@ -18,32 +18,44 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SONINHO - Gerenciador de Cochilos",
-  description: "Gerencie seus cochilos de forma inteligente com o SONINHO",
+  title: "SONINHO - Gerenciador de Sono do Bebê",
+  description: "Gerenciador Inteligente de Cochilos para seu bebê. Acompanhe o sono, vacinas, consultas e desenvolvimento.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "SONINHO",
   },
   formatDetection: {
     telephone: false,
   },
+  icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
   openGraph: {
     type: "website",
     siteName: "SONINHO",
-    title: "SONINHO - Gerenciador de Cochilos",
-    description: "Gerencie seus cochilos de forma inteligente com o SONINHO",
+    title: "SONINHO - Gerenciador de Sono do Bebê",
+    description: "Gerenciador Inteligente de Cochilos para seu bebê",
   },
   twitter: {
     card: "summary",
-    title: "SONINHO - Gerenciador de Cochilos",
-    description: "Gerencie seus cochilos de forma inteligente com o SONINHO",
+    title: "SONINHO - Gerenciador de Sono do Bebê",
+    description: "Gerenciador Inteligente de Cochilos para seu bebê",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#3b82f6",
+  themeColor: "#1e3a8a",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
@@ -59,10 +71,12 @@ export default function RootLayout({
     <html lang="pt-BR">
       <head>
         <Script src="/lasy-bridge.js" strategy="beforeInteractive" />
-        <link rel="icon" href="/icon-192x192.png" />
-        <link rel="apple-touch-icon" href="/icon-192x192.png" />
+        <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="SONINHO" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>

@@ -1,0 +1,43 @@
+{
+  "name": "SONINHO - Gerenciador de Sono do Bebê",
+  "short_name": "SONINHO",
+  "description": "Gerenciador Inteligente de Cochilos para seu bebê",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1e3a8a",
+  "theme_color": "#1e3a8a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["health", "lifestyle", "productivity"],
+  "screenshots": [
+    {
+      "src": "/eventos.jpg",
+      "sizes": "1280x720",
+      "type": "image/jpeg"
+    }
+  ]
+}
