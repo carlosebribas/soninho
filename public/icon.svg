@@ -1,0 +1,56 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fundo azul marinho gradiente -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e3a8a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#312e81;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Fundo com bordas arredondadas -->
+  <rect width="512" height="512" rx="110" fill="url(#bgGradient)"/>
+
+  <!-- Estrelas pequenas -->
+  <circle cx="120" cy="100" r="3" fill="#fbbf24" opacity="0.8"/>
+  <circle cx="420" cy="130" r="2.5" fill="#fbbf24" opacity="0.7"/>
+  <circle cx="80" cy="200" r="2" fill="#fbbf24" opacity="0.6"/>
+  <circle cx="450" cy="250" r="3" fill="#fbbf24" opacity="0.8"/>
+  <circle cx="100" cy="350" r="2.5" fill="#fbbf24" opacity="0.7"/>
+  <circle cx="400" cy="400" r="2" fill="#fbbf24" opacity="0.6"/>
+
+  <!-- Lua crescente principal com brilho -->
+  <g filter="url(#glow)">
+    <path d="M 320 120
+             C 320 120, 380 180, 380 256
+             C 380 332, 320 392, 256 392
+             C 192 392, 132 332, 132 256
+             C 132 180, 192 120, 256 120
+             C 240 140, 230 180, 230 256
+             C 230 320, 240 360, 256 380
+             C 240 380, 160 340, 160 256
+             C 160 172, 240 132, 320 120 Z"
+          fill="#fef3c7"
+          stroke="#fbbf24"
+          stroke-width="2"/>
+  </g>
+
+  <!-- Cratera grande -->
+  <ellipse cx="200" cy="220" rx="18" ry="20" fill="#fde68a" opacity="0.4"/>
+
+  <!-- Cratera média -->
+  <ellipse cx="240" cy="300" rx="12" ry="14" fill="#fde68a" opacity="0.35"/>
+
+  <!-- Cratera pequena -->
+  <ellipse cx="210" cy="270" rx="8" ry="9" fill="#fde68a" opacity="0.3"/>
+
+  <!-- Pequenas crateras -->
+  <circle cx="190" cy="250" r="5" fill="#fde68a" opacity="0.25"/>
+  <circle cx="230" cy="240" r="6" fill="#fde68a" opacity="0.3"/>
+</svg>

@@ -487,7 +487,9 @@ export default function AgendaPage() {
   const getEventosDoDia = (dia: number) => {
     const dataComparacao = new Date(mesAtual.getFullYear(), mesAtual.getMonth(), dia)
     return eventos.filter(evento => {
-      const dataEvento = new Date(evento.data)
+      // Parse correto sem problemas de timezone
+      const [ano, mes, diaEvento] = evento.data.split('-').map(Number)
+      const dataEvento = new Date(ano, mes - 1, diaEvento)
       return dataEvento.getDate() === dia &&
              dataEvento.getMonth() === mesAtual.getMonth() &&
              dataEvento.getFullYear() === mesAtual.getFullYear()
@@ -867,18 +869,24 @@ END:VCALENDAR`
                 </h3>
               </div>
               <div className="space-y-2">
-                {alertasAtivos.map((alerta, index) => (
-                  <div key={index} className="flex items-center text-sm text-gray-700 dark:text-gray-300">
-                    <Clock className="w-4 h-4 mr-2 text-yellow-600" />
-                    <span className="font-medium">{alerta.titulo}</span>
-                    <span className="mx-2">•</span>
-                    <span>{new Date(alerta.dataEvento).toLocaleDateString('pt-BR')} às {alerta.horaEvento}</span>
-                    <span className="mx-2">•</span>
-                    <span className="text-yellow-600 dark:text-yellow-400 font-semibold">
-                      Faltam {alerta.tipoAlerta}
-                    </span>
-                  </div>
-                ))}
+                {alertasAtivos.map((alerta, index) => {
+                  // Parse correto da data sem timezone
+                  const [ano, mes, dia] = alerta.dataEvento.split('-').map(Number)
+                  const dataFormatada = `${String(dia).padStart(2, '0')}/${String(mes).padStart(2, '0')}/${ano}`
+
+                  return (
+                    <div key={index} className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+                      <Clock className="w-4 h-4 mr-2 text-yellow-600" />
+                      <span className="font-medium">{alerta.titulo}</span>
+                      <span className="mx-2">•</span>
+                      <span>{dataFormatada} às {alerta.horaEvento}</span>
+                      <span className="mx-2">•</span>
+                      <span className="text-yellow-600 dark:text-yellow-400 font-semibold">
+                        Faltam {alerta.tipoAlerta}
+                      </span>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           )}
@@ -1253,10 +1261,16 @@ END:VCALENDAR`
             </h2>
             {(() => {
               const eventosDoMes = eventos.filter(evento => {
-                const dataEvento = new Date(evento.data)
+                // Parse correto sem timezone
+                const [ano, mes, dia] = evento.data.split('-').map(Number)
+                const dataEvento = new Date(ano, mes - 1, dia)
                 return dataEvento.getMonth() === mesAtual.getMonth() &&
                        dataEvento.getFullYear() === mesAtual.getFullYear()
-              }).sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())
+              }).sort((a, b) => {
+                const [anoA, mesA, diaA] = a.data.split('-').map(Number)
+                const [anoB, mesB, diaB] = b.data.split('-').map(Number)
+                return new Date(anoA, mesA - 1, diaA).getTime() - new Date(anoB, mesB - 1, diaB).getTime()
+              })
 
               return eventosDoMes.length === 0 ? (
                 <div className="text-center py-12 text-gray-500 dark:text-gray-400">
@@ -1300,7 +1314,10 @@ END:VCALENDAR`
                               )}
                             </div>
                             <p className="text-sm text-gray-600 dark:text-gray-300">
-                              {new Date(evento.data).toLocaleDateString('pt-BR')} às {evento.hora}
+                              {(() => {
+                                const [ano, mes, dia] = evento.data.split('-').map(Number)
+                                return `${String(dia).padStart(2, '0')}/${String(mes).padStart(2, '0')}/${ano}`
+                              })()} às {evento.hora}
                               {calcularIdade(evento.data) && (
                                 <>
                                   <span className="mx-2">•</span>
