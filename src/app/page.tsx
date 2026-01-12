@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { Moon, Bell, TrendingUp, BookOpen, Users, History, Settings, Baby, Calendar, LogIn, Sparkles, Crown } from 'lucide-react'
-import { BabyInfoCard } from '@/components/BabyInfoCard'
 
 interface Feature {
   href: string
@@ -104,11 +103,6 @@ export default function Home() {
           <p className="text-base sm:text-xl lg:text-2xl text-gray-600 dark:text-gray-300 px-4">
             Gerenciador Inteligente de Cochilos
           </p>
-        </div>
-
-        {/* Baby Info Card */}
-        <div className="mb-8">
-          <BabyInfoCard />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">

@@ -53,7 +53,9 @@ export function BabyInfoCard() {
   }
 
   const calculateAge = (birthDate: string) => {
-    const birth = new Date(birthDate)
+    // Parse da data no formato YYYY-MM-DD sem conversão de timezone
+    const [year, month, day] = birthDate.split('-').map(Number)
+    const birth = new Date(year, month - 1, day) // month é 0-indexed
     const now = new Date()
 
     const years = differenceInYears(now, birth)
@@ -71,7 +73,9 @@ export function BabyInfoCard() {
 
   const formatBirthDate = (date: string, time: string) => {
     try {
-      const birthDate = new Date(date)
+      // Parse da data no formato YYYY-MM-DD sem conversão de timezone
+      const [year, month, day] = date.split('-').map(Number)
+      const birthDate = new Date(year, month - 1, day) // month é 0-indexed
       return `${format(birthDate, "dd/MM/yyyy", { locale: ptBR })} às ${time}`
     } catch {
       return `${date} às ${time}`
