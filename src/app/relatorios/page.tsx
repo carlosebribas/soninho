@@ -9,6 +9,8 @@ import { TrendingUp, Calendar, Clock, Moon, Download, FileText } from 'lucide-re
 import { format, subDays, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { BackButton } from '@/components/BackButton'
+import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { useAuth } from '@/hooks/useAuth'
 
 interface SleepEntry {
   id: string
@@ -20,6 +22,7 @@ interface SleepEntry {
 }
 
 export default function Relatorios() {
+  const { hasAccess } = useAuth()
   const [entries, setEntries] = useState<SleepEntry[]>([])
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('7d')
 
@@ -357,18 +360,24 @@ export default function Relatorios() {
             <Button
               onClick={exportToCSV}
               variant="outline"
-              className="flex items-center gap-2 bg-green-50 hover:bg-green-100 border-green-300 text-green-700"
+              disabled={!hasAccess('pro')}
+              className="flex items-center gap-2 bg-green-50 hover:bg-green-100 border-green-300 text-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              title={!hasAccess('pro') ? 'Disponível apenas no plano Pro' : ''}
             >
               <Download className="w-4 h-4" />
               Exportar CSV
+              {!hasAccess('pro') && <span className="text-xs ml-1">(Pro)</span>}
             </Button>
             <Button
               onClick={exportToPDF}
               variant="outline"
-              className="flex items-center gap-2 bg-red-50 hover:bg-red-100 border-red-300 text-red-700"
+              disabled={!hasAccess('pro')}
+              className="flex items-center gap-2 bg-red-50 hover:bg-red-100 border-red-300 text-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              title={!hasAccess('pro') ? 'Disponível apenas no plano Pro' : ''}
             >
               <FileText className="w-4 h-4" />
               Exportar PDF
+              {!hasAccess('pro') && <span className="text-xs ml-1">(Pro)</span>}
             </Button>
           </div>
         </div>

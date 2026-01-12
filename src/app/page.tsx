@@ -1,8 +1,20 @@
+'use client'
+
 import Link from 'next/link'
-import { Moon, Bell, TrendingUp, BookOpen, Users, History, Settings, Baby, Calendar, LogIn, Sparkles } from 'lucide-react'
+import { Moon, Bell, TrendingUp, BookOpen, Users, History, Settings, Baby, Calendar, LogIn, Sparkles, Crown } from 'lucide-react'
+
+interface Feature {
+  href: string
+  icon: React.ElementType
+  title: string
+  description: string
+  highlight?: boolean
+  special?: boolean
+  premium?: boolean
+}
 
 export default function Home() {
-  const features = [
+  const features: Feature[] = [
     {
       href: '/quiz',
       icon: Sparkles,
@@ -45,7 +57,8 @@ export default function Home() {
       href: '/recomendacoes',
       icon: TrendingUp,
       title: 'Recomendações',
-      description: 'Sugestões baseadas nos dados coletados'
+      description: 'Sugestões baseadas nos dados coletados',
+      premium: true
     },
     {
       href: '/relatorios',
@@ -63,7 +76,8 @@ export default function Home() {
       href: '/comunidade',
       icon: Users,
       title: 'Comunidade',
-      description: 'Compartilhe experiências com outros pais'
+      description: 'Compartilhe experiências com outros pais',
+      premium: true
     },
     {
       href: '/historico',
@@ -114,12 +128,18 @@ export default function Home() {
                       ? 'text-blue-600 dark:text-blue-400'
                       : 'text-blue-600 dark:text-blue-400'
                   }`} />
-                  <h3 className={`text-base sm:text-lg font-semibold mb-2 ${
+                  <h3 className={`text-base sm:text-lg font-semibold mb-2 flex items-center justify-center gap-2 ${
                     feature.special
                       ? 'text-white'
                       : 'text-gray-900 dark:text-white'
                   }`}>
                     {feature.title}
+                    {feature.premium && (
+                      <span className="inline-flex items-center gap-1 text-xs bg-gradient-to-r from-purple-600 to-pink-600 text-white px-2 py-0.5 rounded-full">
+                        <Crown className="w-3 h-3" />
+                        Pro
+                      </span>
+                    )}
                   </h3>
                   <p className={`text-xs sm:text-sm leading-relaxed ${
                     feature.special

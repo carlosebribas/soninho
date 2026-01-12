@@ -8,6 +8,7 @@ import { TrendingUp, Target, Clock, Zap, Download, FileText } from 'lucide-react
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { BackButton } from '@/components/BackButton'
+import { ProtectedRoute } from '@/components/ProtectedRoute'
 
 interface SleepEntry {
   id: string
@@ -293,8 +294,9 @@ export default function Recomendacoes() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-100 p-4">
-      <div className="max-w-4xl mx-auto">
+    <ProtectedRoute requiredPlan="pro" featureName="Recomendações Personalizadas com IA">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-100 p-4">
+        <div className="max-w-4xl mx-auto">
         <BackButton />
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-orange-900 mb-2 flex items-center justify-center gap-2">
@@ -409,5 +411,6 @@ export default function Recomendacoes() {
         </div>
       </div>
     </div>
+    </ProtectedRoute>
   )
 }

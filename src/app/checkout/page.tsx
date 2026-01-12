@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
+import { useAuth } from '@/hooks/useAuth'
+import { PlanType } from '@/lib/supabase'
 
 interface Plan {
   id: string
@@ -58,6 +60,7 @@ const plans: Plan[] = [
 
 export default function CheckoutPage() {
   const router = useRouter()
+  const { isAuthenticated, updateSubscription } = useAuth()
   const [selectedPlan, setSelectedPlan] = useState<string>('pro')
   const [quizAnswers, setQuizAnswers] = useState<Record<string, string> | null>(null)
   const [loading, setLoading] = useState(false)
@@ -71,14 +74,30 @@ export default function CheckoutPage() {
 
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!isAuthenticated) {
+      alert('Você precisa estar logado para assinar um plano!')
+      router.push('/auth')
+      return
+    }
+
     setLoading(true)
 
-    // Simulação de processamento
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    try {
+      // Simulação de processamento de pagamento
+      await new Promise(resolve => setTimeout(resolve, 2000))
 
-    // Aqui você integraria com um gateway de pagamento real
-    alert('Pagamento processado com sucesso! 🎉')
-    router.push('/diario')
+      // Atualizar assinatura no Supabase
+      await updateSubscription(selectedPlan as PlanType)
+
+      alert('Pagamento processado com sucesso! 🎉\nSua assinatura foi ativada!')
+      router.push('/')
+    } catch (error) {
+      console.error('Erro ao processar pagamento:', error)
+      alert('Erro ao processar pagamento. Tente novamente.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const selectedPlanData = plans.find(p => p.id === selectedPlan)
