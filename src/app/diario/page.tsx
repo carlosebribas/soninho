@@ -30,13 +30,15 @@ interface SleepWindow {
 
 export default function DiarioSono() {
   const [entries, setEntries] = useState<SleepEntry[]>([])
-  const [sleepType, setSleepType] = useState<'sono' | 'soneca'>('sono')
+  const [sleepType, setSleepType] = useState<'sono' | 'soneca'>('soneca')
   const [newEntry, setNewEntry] = useState({
     startTime: '',
     endTime: '',
     notes: '',
-    mood: ''
+    moodBefore: '',
+    moodAfter: ''
   })
+  const [editingEntry, setEditingEntry] = useState<string | null>(null)
 
   // Load entries from localStorage on mount
   useEffect(() => {
@@ -51,21 +53,49 @@ export default function DiarioSono() {
     localStorage.setItem('sleepDiary', JSON.stringify(entries))
   }, [entries])
 
-  const addEntry = () => {
-    if (!newEntry.startTime || !newEntry.endTime) return
+  // Iniciar registro (apenas hora de dormir)
+  const startSleepEntry = () => {
+    if (!newEntry.startTime) return
 
     const entry: SleepEntry = {
       id: Date.now().toString(),
       date: format(new Date(), 'yyyy-MM-dd'),
       startTime: newEntry.startTime,
-      endTime: newEntry.endTime,
+      endTime: null,
       notes: newEntry.notes,
-      mood: newEntry.mood,
-      type: sleepType
+      moodBefore: newEntry.moodBefore,
+      type: sleepType,
+      isPending: true
     }
 
     setEntries([entry, ...entries])
-    setNewEntry({ startTime: '', endTime: '', notes: '', mood: '' })
+    setNewEntry({ startTime: '', endTime: '', notes: '', moodBefore: '', moodAfter: '' })
+  }
+
+  // Completar registro (adicionar hora de acordar)
+  const completeSleepEntry = (entryId: string) => {
+    if (!newEntry.endTime) return
+
+    setEntries(entries.map(entry =>
+      entry.id === entryId
+        ? {
+            ...entry,
+            endTime: newEntry.endTime,
+            moodAfter: newEntry.moodAfter,
+            notes: newEntry.notes || entry.notes,
+            isPending: false
+          }
+        : entry
+    ))
+
+    setEditingEntry(null)
+    setNewEntry({ startTime: '', endTime: '', notes: '', moodBefore: '', moodAfter: '' })
+  }
+
+  // Cancelar edição
+  const cancelEdit = () => {
+    setEditingEntry(null)
+    setNewEntry({ startTime: '', endTime: '', notes: '', moodBefore: '', moodAfter: '' })
   }
 
   const calculateDuration = (start: string, end: string) => {
@@ -86,22 +116,24 @@ export default function DiarioSono() {
   const analyzeSleepWindows = () => {
     const today = format(new Date(), 'yyyy-MM-dd')
     const todayEntries = entries
-      .filter(e => e.date === today)
+      .filter(e => e.date === today && !e.isPending && e.endTime)
       .sort((a, b) => a.startTime.localeCompare(b.startTime))
 
     const windows: SleepWindow[] = []
-    
+
     for (let i = 0; i < todayEntries.length - 1; i++) {
       const currentEnd = todayEntries[i].endTime
       const nextStart = todayEntries[i + 1].startTime
-      
+
+      if (!currentEnd) continue
+
       const endDate = new Date(`2000-01-01T${currentEnd}`)
       const startDate = new Date(`2000-01-01T${nextStart}`)
-      
+
       const awakeDuration = differenceInMinutes(startDate, endDate)
-      
-      if (todayEntries[i].type === 'soneca') {
-        const napDuration = calculateDuration(todayEntries[i].startTime, todayEntries[i].endTime)
+
+      if (todayEntries[i].type === 'soneca' && currentEnd) {
+        const napDuration = calculateDuration(todayEntries[i].startTime, currentEnd)
         windows.push({
           awakeDuration,
           napDuration: napDuration.hours * 60 + napDuration.minutes
@@ -152,21 +184,25 @@ export default function DiarioSono() {
 
   const getTodayStats = () => {
     const today = format(new Date(), 'yyyy-MM-dd')
-    const todayEntries = entries.filter(e => e.date === today)
-    
+    const todayEntries = entries.filter(e => e.date === today && !e.isPending)
+
     const naps = todayEntries.filter(e => e.type === 'soneca')
     const nightSleep = todayEntries.filter(e => e.type === 'sono')
-    
+
     let totalNapTime = 0
     naps.forEach(nap => {
-      const duration = calculateDuration(nap.startTime, nap.endTime)
-      totalNapTime += duration.hours * 60 + duration.minutes
+      if (nap.endTime) {
+        const duration = calculateDuration(nap.startTime, nap.endTime)
+        totalNapTime += duration.hours * 60 + duration.minutes
+      }
     })
 
     let totalNightSleep = 0
     nightSleep.forEach(sleep => {
-      const duration = calculateDuration(sleep.startTime, sleep.endTime)
-      totalNightSleep += duration.hours * 60 + duration.minutes
+      if (sleep.endTime) {
+        const duration = calculateDuration(sleep.startTime, sleep.endTime)
+        totalNightSleep += duration.hours * 60 + duration.minutes
+      }
     })
 
     return {
@@ -177,8 +213,13 @@ export default function DiarioSono() {
     }
   }
 
+  const getPendingEntries = () => {
+    return entries.filter(e => e.isPending)
+  }
+
   const stats = getTodayStats()
   const suggestions = getSleepSuggestions()
+  const pendingEntries = getPendingEntries()
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
@@ -191,6 +232,59 @@ export default function DiarioSono() {
           </h1>
           <p className="text-gray-600">Registre os horários de sono e sonecas do seu bebê</p>
         </div>
+
+        {/* Registros Pendentes (em andamento) */}
+        {pendingEntries.length > 0 && (
+          <Card className="mb-6 border-2 border-orange-400 bg-orange-50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-orange-700">
+                <Clock className="w-5 h-5 animate-pulse" />
+                {pendingEntries.length === 1 ? 'Registro em Andamento' : `${pendingEntries.length} Registros em Andamento`}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-orange-800 mb-4">
+                Clique em "Completar Registro" quando o bebê acordar
+              </p>
+              <div className="space-y-3">
+                {pendingEntries.map((entry) => (
+                  <div key={entry.id} className="bg-white p-4 rounded-lg border border-orange-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        {entry.type === 'soneca' ? (
+                          <Coffee className="w-5 h-5 text-orange-600" />
+                        ) : (
+                          <Moon className="w-5 h-5 text-indigo-600" />
+                        )}
+                        <span className="font-semibold text-gray-800">
+                          {entry.type === 'soneca' ? 'Soneca' : 'Sono Noturno'}
+                        </span>
+                      </div>
+                      <span className="text-sm text-gray-600">Começou às {entry.startTime}</span>
+                    </div>
+                    {entry.moodBefore && (
+                      <p className="text-sm text-gray-600 mb-2">
+                        <strong>Humor antes:</strong> {entry.moodBefore}
+                      </p>
+                    )}
+                    {entry.notes && (
+                      <p className="text-sm text-gray-600 mb-3">
+                        <strong>Notas:</strong> {entry.notes}
+                      </p>
+                    )}
+                    <Button
+                      onClick={() => setEditingEntry(entry.id)}
+                      size="sm"
+                      className="w-full bg-orange-600 hover:bg-orange-700"
+                    >
+                      Completar Registro
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Estatísticas do Dia */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -251,84 +345,135 @@ export default function DiarioSono() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Plus className="w-5 h-5" />
-              Novo Registro
+              {editingEntry ? 'Completar Registro' : 'Novo Registro'}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Tipo de Sono */}
-            <div>
-              <Label>Tipo de Registro</Label>
-              <div className="flex gap-4 mt-2">
-                <Button
-                  type="button"
-                  variant={sleepType === 'sono' ? 'default' : 'outline'}
-                  onClick={() => setSleepType('sono')}
-                  className="flex-1"
-                >
-                  <Moon className="w-4 h-4 mr-2" />
-                  Sono Noturno
-                </Button>
-                <Button
-                  type="button"
-                  variant={sleepType === 'soneca' ? 'default' : 'outline'}
-                  onClick={() => setSleepType('soneca')}
-                  className="flex-1"
-                >
-                  <Coffee className="w-4 h-4 mr-2" />
-                  Soneca
-                </Button>
-              </div>
-            </div>
+            {editingEntry ? (
+              // Modo de completar registro
+              <>
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-4">
+                  <p className="text-sm text-blue-800">
+                    Completando registro iniciado às {entries.find(e => e.id === editingEntry)?.startTime}
+                  </p>
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="startTime">Horário de dormir</Label>
-                <Input
-                  id="startTime"
-                  type="time"
-                  value={newEntry.startTime}
-                  onChange={(e) => setNewEntry({...newEntry, startTime: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label htmlFor="endTime">Horário de acordar</Label>
-                <Input
-                  id="endTime"
-                  type="time"
-                  value={newEntry.endTime}
-                  onChange={(e) => setNewEntry({...newEntry, endTime: e.target.value})}
-                />
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="mood">Humor (opcional)</Label>
-              <Input
-                id="mood"
-                placeholder="Ex: Feliz, Irritado, Calmo..."
-                value={newEntry.mood}
-                onChange={(e) => setNewEntry({...newEntry, mood: e.target.value})}
-              />
-            </div>
-            <div>
-              <Label htmlFor="notes">Anotações</Label>
-              <Textarea
-                id="notes"
-                placeholder="Observações sobre o sono, eventos especiais..."
-                value={newEntry.notes}
-                onChange={(e) => setNewEntry({...newEntry, notes: e.target.value})}
-                rows={3}
-              />
-            </div>
-            <Button onClick={addEntry} className="w-full">
-              Adicionar Registro
-            </Button>
+                <div>
+                  <Label htmlFor="endTime">Horário que acordou *</Label>
+                  <Input
+                    id="endTime"
+                    type="time"
+                    value={newEntry.endTime}
+                    onChange={(e) => setNewEntry({...newEntry, endTime: e.target.value})}
+                    className="text-lg"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="moodAfter">Humor ao acordar (opcional)</Label>
+                  <Input
+                    id="moodAfter"
+                    placeholder="Ex: Feliz, Irritado, Calmo..."
+                    value={newEntry.moodAfter}
+                    onChange={(e) => setNewEntry({...newEntry, moodAfter: e.target.value})}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="notes">Anotações adicionais (opcional)</Label>
+                  <Textarea
+                    id="notes"
+                    placeholder="Alguma observação adicional..."
+                    value={newEntry.notes}
+                    onChange={(e) => setNewEntry({...newEntry, notes: e.target.value})}
+                    rows={2}
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <Button onClick={() => completeSleepEntry(editingEntry)} className="flex-1">
+                    Salvar Registro Completo
+                  </Button>
+                  <Button onClick={cancelEdit} variant="outline">
+                    Cancelar
+                  </Button>
+                </div>
+              </>
+            ) : (
+              // Modo de iniciar registro
+              <>
+                <div>
+                  <Label>Tipo de Registro</Label>
+                  <div className="flex gap-4 mt-2">
+                    <Button
+                      type="button"
+                      variant={sleepType === 'sono' ? 'default' : 'outline'}
+                      onClick={() => setSleepType('sono')}
+                      className="flex-1"
+                    >
+                      <Moon className="w-4 h-4 mr-2" />
+                      Sono Noturno
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={sleepType === 'soneca' ? 'default' : 'outline'}
+                      onClick={() => setSleepType('soneca')}
+                      className="flex-1"
+                    >
+                      <Coffee className="w-4 h-4 mr-2" />
+                      Soneca
+                    </Button>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="startTime">Horário que começou a dormir *</Label>
+                  <Input
+                    id="startTime"
+                    type="time"
+                    value={newEntry.startTime}
+                    onChange={(e) => setNewEntry({...newEntry, startTime: e.target.value})}
+                    className="text-lg"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="moodBefore">Humor antes de dormir (opcional)</Label>
+                  <Input
+                    id="moodBefore"
+                    placeholder="Ex: Irritado, Cansado, Tranquilo..."
+                    value={newEntry.moodBefore}
+                    onChange={(e) => setNewEntry({...newEntry, moodBefore: e.target.value})}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="notes">Anotações (opcional)</Label>
+                  <Textarea
+                    id="notes"
+                    placeholder="Observações antes de dormir..."
+                    value={newEntry.notes}
+                    onChange={(e) => setNewEntry({...newEntry, notes: e.target.value})}
+                    rows={2}
+                  />
+                </div>
+
+                <Button onClick={startSleepEntry} className="w-full" disabled={!newEntry.startTime}>
+                  Iniciar Registro
+                </Button>
+
+                <p className="text-xs text-gray-500 text-center">
+                  Você poderá completar o registro depois quando o bebê acordar
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
         {/* Sleep Entries */}
         <div className="space-y-4">
           <h2 className="text-2xl font-bold text-gray-800 mb-4">Histórico de Registros</h2>
-          {entries.map((entry) => (
+          {entries.filter(e => !e.isPending).map((entry) => (
             <Card key={entry.id} className={entry.type === 'soneca' ? 'border-l-4 border-l-orange-400' : 'border-l-4 border-l-indigo-600'}>
               <CardContent className="pt-6">
                 <div className="flex items-start justify-between mb-2">
@@ -342,26 +487,41 @@ export default function DiarioSono() {
                       {entry.type === 'soneca' ? 'Soneca' : 'Sono Noturno'}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Clock className="w-4 h-4" />
-                    {calculateDuration(entry.startTime, entry.endTime).text}
-                  </div>
+                  {entry.endTime && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Clock className="w-4 h-4" />
+                      {calculateDuration(entry.startTime, entry.endTime).text}
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center gap-4 mb-2">
                   <div className="flex items-center gap-2">
                     <Moon className="w-4 h-4 text-gray-500" />
                     <span className="font-semibold">{entry.startTime}</span>
                   </div>
-                  <span className="text-gray-400">→</span>
-                  <div className="flex items-center gap-2">
-                    <Sun className="w-4 h-4 text-yellow-600" />
-                    <span className="font-semibold">{entry.endTime}</span>
-                  </div>
+                  {entry.endTime && (
+                    <>
+                      <span className="text-gray-400">→</span>
+                      <div className="flex items-center gap-2">
+                        <Sun className="w-4 h-4 text-yellow-600" />
+                        <span className="font-semibold">{entry.endTime}</span>
+                      </div>
+                    </>
+                  )}
                 </div>
-                {entry.mood && (
-                  <p className="mt-2 text-sm text-gray-600">
-                    <strong>Humor:</strong> {entry.mood}
-                  </p>
+                {(entry.moodBefore || entry.moodAfter) && (
+                  <div className="mt-3 space-y-1">
+                    {entry.moodBefore && (
+                      <p className="text-sm text-gray-600">
+                        <strong>Humor antes de dormir:</strong> {entry.moodBefore}
+                      </p>
+                    )}
+                    {entry.moodAfter && (
+                      <p className="text-sm text-gray-600">
+                        <strong>Humor ao acordar:</strong> {entry.moodAfter}
+                      </p>
+                    )}
+                  </div>
                 )}
                 {entry.notes && (
                   <p className="mt-2 text-sm text-gray-600">
