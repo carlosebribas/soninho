@@ -75,22 +75,13 @@ export default function AuthPage() {
 
             <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-6">
               <h2 className="font-semibold text-gray-900 dark:text-white mb-3">
-                ℹ️ Informação
+                ℹ️ O que aconteceu?
               </h2>
               <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
-                Este app usa Supabase para autenticação e armazenamento de dados.
+                O sistema de autenticação não conseguiu se conectar ao banco de dados.
               </p>
               <p className="text-sm text-gray-700 dark:text-gray-300">
-                O banco de dados será configurado automaticamente quando você conectar seu projeto Supabase através da interface do Lasy.
-              </p>
-            </div>
-
-            <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4 mb-6">
-              <h2 className="font-semibold text-amber-900 dark:text-amber-300 mb-2 text-sm">
-                🚀 Próximos passos
-              </h2>
-              <p className="text-xs text-amber-800 dark:text-amber-200">
-                Por enquanto, o app está funcionando com armazenamento local (localStorage). Para habilitar autenticação e sincronização na nuvem, conecte um banco de dados Supabase.
+                Por enquanto, o app está funcionando normalmente com armazenamento local (seus dados ficam salvos no navegador).
               </p>
             </div>
 
