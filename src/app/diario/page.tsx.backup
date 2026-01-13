@@ -6,11 +6,10 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
-import { Moon, Sun, Clock, Plus, Coffee, TrendingUp, AlertCircle, Lightbulb, Loader2 } from 'lucide-react'
+import { Moon, Sun, Clock, Plus, Coffee, TrendingUp, AlertCircle, Lightbulb } from 'lucide-react'
 import { format, differenceInMinutes, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { BackButton } from '@/components/BackButton'
-import { useSleepEntries } from '@/hooks/useSleepEntries'
 
 interface SleepEntry {
   id: string
@@ -30,7 +29,7 @@ interface SleepWindow {
 }
 
 export default function DiarioSono() {
-  const { entries, loading, addEntry, updateEntry } = useSleepEntries()
+  const [entries, setEntries] = useState<SleepEntry[]>([])
   const [sleepType, setSleepType] = useState<'sono' | 'soneca'>('soneca')
   const [newEntry, setNewEntry] = useState({
     startTime: '',
@@ -40,53 +39,57 @@ export default function DiarioSono() {
     moodAfter: ''
   })
   const [editingEntry, setEditingEntry] = useState<string | null>(null)
-  const [submitting, setSubmitting] = useState(false)
+
+  // Load entries from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('sleepDiary')
+    if (saved) {
+      setEntries(JSON.parse(saved))
+    }
+  }, [])
+
+  // Save entries to localStorage whenever entries change
+  useEffect(() => {
+    localStorage.setItem('sleepDiary', JSON.stringify(entries))
+  }, [entries])
 
   // Iniciar registro (apenas hora de dormir)
-  const startSleepEntry = async () => {
-    if (!newEntry.startTime || submitting) return
+  const startSleepEntry = () => {
+    if (!newEntry.startTime) return
 
-    setSubmitting(true)
-    try {
-      await addEntry({
-        date: format(new Date(), 'yyyy-MM-dd'),
-        startTime: newEntry.startTime,
-        endTime: null,
-        notes: newEntry.notes,
-        moodBefore: newEntry.moodBefore,
-        type: sleepType,
-        isPending: true
-      })
-      setNewEntry({ startTime: '', endTime: '', notes: '', moodBefore: '', moodAfter: '' })
-    } catch (error) {
-      console.error('Erro ao iniciar registro:', error)
-      alert('Erro ao salvar. Tente novamente.')
-    } finally {
-      setSubmitting(false)
+    const entry: SleepEntry = {
+      id: Date.now().toString(),
+      date: format(new Date(), 'yyyy-MM-dd'),
+      startTime: newEntry.startTime,
+      endTime: null,
+      notes: newEntry.notes,
+      moodBefore: newEntry.moodBefore,
+      type: sleepType,
+      isPending: true
     }
+
+    setEntries([entry, ...entries])
+    setNewEntry({ startTime: '', endTime: '', notes: '', moodBefore: '', moodAfter: '' })
   }
 
   // Completar registro (adicionar hora de acordar)
-  const completeSleepEntry = async (entryId: string) => {
-    if (!newEntry.endTime || submitting) return
+  const completeSleepEntry = (entryId: string) => {
+    if (!newEntry.endTime) return
 
-    setSubmitting(true)
-    try {
-      const entry = entries.find(e => e.id === entryId)
-      await updateEntry(entryId, {
-        endTime: newEntry.endTime,
-        moodAfter: newEntry.moodAfter,
-        notes: newEntry.notes || entry?.notes,
-        isPending: false
-      })
-      setEditingEntry(null)
-      setNewEntry({ startTime: '', endTime: '', notes: '', moodBefore: '', moodAfter: '' })
-    } catch (error) {
-      console.error('Erro ao completar registro:', error)
-      alert('Erro ao salvar. Tente novamente.')
-    } finally {
-      setSubmitting(false)
-    }
+    setEntries(entries.map(entry =>
+      entry.id === entryId
+        ? {
+            ...entry,
+            endTime: newEntry.endTime,
+            moodAfter: newEntry.moodAfter,
+            notes: newEntry.notes || entry.notes,
+            isPending: false
+          }
+        : entry
+    ))
+
+    setEditingEntry(null)
+    setNewEntry({ startTime: '', endTime: '', notes: '', moodBefore: '', moodAfter: '' })
   }
 
   // Cancelar edição
@@ -217,17 +220,6 @@ export default function DiarioSono() {
   const stats = getTodayStats()
   const suggestions = getSleepSuggestions()
   const pendingEntries = getPendingEntries()
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-indigo-600 mx-auto mb-4" />
-          <p className="text-gray-600">Carregando registros...</p>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
@@ -399,11 +391,10 @@ export default function DiarioSono() {
                 </div>
 
                 <div className="flex gap-2">
-                  <Button onClick={() => completeSleepEntry(editingEntry)} className="flex-1" disabled={submitting}>
-                    {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  <Button onClick={() => completeSleepEntry(editingEntry)} className="flex-1">
                     Salvar Registro Completo
                   </Button>
-                  <Button onClick={cancelEdit} variant="outline" disabled={submitting}>
+                  <Button onClick={cancelEdit} variant="outline">
                     Cancelar
                   </Button>
                 </div>
@@ -467,8 +458,7 @@ export default function DiarioSono() {
                   />
                 </div>
 
-                <Button onClick={startSleepEntry} className="w-full" disabled={!newEntry.startTime || submitting}>
-                  {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                <Button onClick={startSleepEntry} className="w-full" disabled={!newEntry.startTime}>
                   Iniciar Registro
                 </Button>
 

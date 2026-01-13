@@ -1,3 +1,5 @@
+-- Migração inicial - Estrutura completa do banco
+
 -- Habilitar extensões necessárias
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
