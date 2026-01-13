@@ -15,10 +15,12 @@ interface SleepEntry {
   id: string
   date: string
   startTime: string
-  endTime: string
+  endTime: string | null // null quando ainda está dormindo
   notes: string
-  mood?: string
+  moodBefore?: string // humor antes de dormir
+  moodAfter?: string // humor após acordar
   type: 'sono' | 'soneca'
+  isPending: boolean // true quando ainda não completou o registro
 }
 
 interface SleepWindow {
