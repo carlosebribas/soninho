@@ -66,31 +66,32 @@ export default function AuthPage() {
             <div className="text-center mb-6">
               <AlertCircle className="w-16 h-16 text-amber-500 mx-auto mb-4" />
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                Configuração Necessária
+                Banco de Dados Não Conectado
               </h1>
               <p className="text-gray-600 dark:text-gray-300 mb-6">
-                Para usar a autenticação, você precisa configurar o Supabase
+                O sistema de autenticação requer uma conexão com o banco de dados
               </p>
             </div>
 
             <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-6">
               <h2 className="font-semibold text-gray-900 dark:text-white mb-3">
-                Passos para configurar:
+                ℹ️ Informação
               </h2>
-              <ol className="text-sm text-gray-700 dark:text-gray-300 space-y-2 list-decimal list-inside">
-                <li>Crie uma conta gratuita em <a href="https://supabase.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium">supabase.com</a></li>
-                <li>Crie um novo projeto</li>
-                <li>Copie a URL e a chave anônima do projeto</li>
-                <li>Crie um arquivo <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded">.env.local</code> na raiz do projeto</li>
-                <li>Adicione as variáveis de ambiente</li>
-              </ol>
+              <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
+                Este app usa Supabase para autenticação e armazenamento de dados.
+              </p>
+              <p className="text-sm text-gray-700 dark:text-gray-300">
+                O banco de dados será configurado automaticamente quando você conectar seu projeto Supabase através da interface do Lasy.
+              </p>
             </div>
 
-            <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 font-mono text-xs overflow-x-auto">
-              <div className="text-gray-700 dark:text-gray-300">
-                NEXT_PUBLIC_SUPABASE_URL=sua-url-aqui<br />
-                NEXT_PUBLIC_SUPABASE_ANON_KEY=sua-chave-aqui
-              </div>
+            <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4 mb-6">
+              <h2 className="font-semibold text-amber-900 dark:text-amber-300 mb-2 text-sm">
+                🚀 Próximos passos
+              </h2>
+              <p className="text-xs text-amber-800 dark:text-amber-200">
+                Por enquanto, o app está funcionando com armazenamento local (localStorage). Para habilitar autenticação e sincronização na nuvem, conecte um banco de dados Supabase.
+              </p>
             </div>
 
             <button
