@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Moon, Sun, Clock, Plus, Coffee, TrendingUp, AlertCircle, Lightbulb, Loader2 } from 'lucide-react'
-import { format, differenceInMinutes, parseISO } from 'date-fns'
+import { format, differenceInMinutes, differenceInMonths, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { BackButton } from '@/components/BackButton'
 import { useSleepEntries } from '@/hooks/useSleepEntries'
@@ -41,6 +41,25 @@ export default function DiarioSono() {
   })
   const [editingEntry, setEditingEntry] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [babyAgeInMonths, setBabyAgeInMonths] = useState<number>(0)
+
+  // Calcular idade do bebê em meses
+  useEffect(() => {
+    const saved = localStorage.getItem('cadastroBebe')
+    if (saved) {
+      try {
+        const babyData = JSON.parse(saved)
+        if (babyData.dataNascimento) {
+          const [year, month, day] = babyData.dataNascimento.split('-').map(Number)
+          const birthDate = new Date(year, month - 1, day)
+          const ageInMonths = differenceInMonths(new Date(), birthDate)
+          setBabyAgeInMonths(ageInMonths)
+        }
+      } catch (error) {
+        console.error('Erro ao calcular idade:', error)
+      }
+    }
+  }, [])
 
   // Iniciar registro (apenas hora de dormir)
   const startSleepEntry = async () => {
@@ -146,33 +165,73 @@ export default function DiarioSono() {
   const getSleepSuggestions = () => {
     const windows = analyzeSleepWindows()
     const suggestions: string[] = []
-    
+
     const naps = entries.filter(e => e.type === 'soneca' && e.date === format(new Date(), 'yyyy-MM-dd'))
     const totalNaps = naps.length
-    
-    // Análise baseada em idade (assumindo bebê de 3-6 meses)
-    if (totalNaps === 0) {
-      suggestions.push('💤 Considere adicionar 2-3 sonecas durante o dia para bebês de 3-6 meses.')
-    } else if (totalNaps > 4) {
-      suggestions.push('⚠️ Muitas sonecas podem afetar o sono noturno. Tente consolidar em 2-3 sonecas.')
+
+    // Determinar faixa etária e parâmetros ideais
+    let ageRange = ''
+    let idealNaps = { min: 2, max: 3 }
+    let idealAwakeWindow = { min: 60, max: 120 } // em minutos
+    let maxNapDuration = 120 // em minutos
+
+    if (babyAgeInMonths < 3) {
+      ageRange = '0-3 meses'
+      idealNaps = { min: 4, max: 6 }
+      idealAwakeWindow = { min: 45, max: 90 }
+      maxNapDuration = 120
+    } else if (babyAgeInMonths < 6) {
+      ageRange = '3-6 meses'
+      idealNaps = { min: 3, max: 4 }
+      idealAwakeWindow = { min: 90, max: 150 }
+      maxNapDuration = 120
+    } else if (babyAgeInMonths < 9) {
+      ageRange = '6-9 meses'
+      idealNaps = { min: 2, max: 3 }
+      idealAwakeWindow = { min: 120, max: 180 }
+      maxNapDuration = 120
+    } else if (babyAgeInMonths < 12) {
+      ageRange = '9-12 meses'
+      idealNaps = { min: 2, max: 2 }
+      idealAwakeWindow = { min: 150, max: 240 }
+      maxNapDuration = 120
+    } else if (babyAgeInMonths < 18) {
+      ageRange = '12-18 meses'
+      idealNaps = { min: 1, max: 2 }
+      idealAwakeWindow = { min: 180, max: 300 }
+      maxNapDuration = 150
+    } else {
+      ageRange = '18+ meses'
+      idealNaps = { min: 1, max: 1 }
+      idealAwakeWindow = { min: 240, max: 360 }
+      maxNapDuration = 180
+    }
+
+    // Análise baseada na idade efetiva
+    if (totalNaps === 0 && idealNaps.min > 0) {
+      suggestions.push(`💤 Considere adicionar ${idealNaps.min}-${idealNaps.max} sonecas durante o dia para bebês de ${ageRange}.`)
+    } else if (totalNaps > idealNaps.max) {
+      suggestions.push(`⚠️ Muitas sonecas (${totalNaps}) para ${ageRange}. Ideal: ${idealNaps.min}-${idealNaps.max} sonecas. Tente consolidar.`)
+    } else if (totalNaps < idealNaps.min && idealNaps.min > 0) {
+      suggestions.push(`💤 Poucas sonecas (${totalNaps}) para ${ageRange}. Ideal: ${idealNaps.min}-${idealNaps.max} sonecas.`)
     }
 
     // Análise de janelas de sono
     windows.forEach((window, index) => {
-      if (window.awakeDuration > 180) { // Mais de 3 horas acordado
-        suggestions.push(`⏰ Janela ${index + 1}: Tempo acordado muito longo (${Math.floor(window.awakeDuration / 60)}h). Ideal: 1.5-2.5h para bebês pequenos.`)
-      } else if (window.awakeDuration < 60) { // Menos de 1 hora acordado
-        suggestions.push(`⏰ Janela ${index + 1}: Tempo acordado muito curto (${window.awakeDuration}min). Pode não estar cansado o suficiente.`)
+      if (window.awakeDuration > idealAwakeWindow.max) {
+        suggestions.push(`⏰ Janela ${index + 1}: Tempo acordado muito longo (${Math.floor(window.awakeDuration / 60)}h ${window.awakeDuration % 60}min). Ideal para ${ageRange}: ${Math.floor(idealAwakeWindow.min / 60)}h-${Math.floor(idealAwakeWindow.max / 60)}h.`)
+      } else if (window.awakeDuration < idealAwakeWindow.min) {
+        suggestions.push(`⏰ Janela ${index + 1}: Tempo acordado muito curto (${window.awakeDuration}min). Ideal para ${ageRange}: ${Math.floor(idealAwakeWindow.min / 60)}h-${Math.floor(idealAwakeWindow.max / 60)}h.`)
       }
 
-      if (window.napDuration && window.napDuration > 120) { // Soneca > 2h
-        suggestions.push(`😴 Soneca ${index + 1} muito longa (${Math.floor(window.napDuration / 60)}h). Considere limitar a 1.5-2h.`)
+      if (window.napDuration && window.napDuration > maxNapDuration) {
+        suggestions.push(`😴 Soneca ${index + 1} muito longa (${Math.floor(window.napDuration / 60)}h ${window.napDuration % 60}min). Considere limitar a ${Math.floor(maxNapDuration / 60)}h para ${ageRange}.`)
       }
     })
 
     // Sugestões gerais
     if (suggestions.length === 0) {
-      suggestions.push('✅ Padrão de sono está dentro do esperado! Continue monitorando.')
+      suggestions.push(`✅ Padrão de sono está dentro do esperado para ${ageRange}! Continue monitorando.`)
       suggestions.push('💡 Dica: Mantenha horários consistentes para ajudar na rotina do bebê.')
     }
 
