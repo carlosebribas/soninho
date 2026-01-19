@@ -80,15 +80,15 @@ export default function ConfiguracoesAmbiente() {
   const lightInfo = getLightStatus(settings.lightLevel)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-100 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-100 dark:from-gray-900 dark:to-indigo-950 p-4 transition-colors">
       <div className="max-w-4xl mx-auto">
         <BackButton />
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-indigo-900 mb-2 flex items-center justify-center gap-2">
+          <h1 className="text-4xl font-bold text-indigo-900 dark:text-indigo-100 mb-2 flex items-center justify-center gap-2">
             <Settings className="w-8 h-8" />
             Configurações de Ambiente
           </h1>
-          <p className="text-gray-600">Configure o ambiente ideal para o sono do seu bebê</p>
+          <p className="text-gray-600 dark:text-gray-300">Configure o ambiente ideal para o sono do seu bebê</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -218,6 +218,35 @@ export default function ConfiguracoesAmbiente() {
           </Card>
         </div>
 
+        {/* Appearance Settings */}
+        <Card className="mb-6 border-2 border-purple-300">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              {theme === 'dark' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+              Aparência do Aplicativo
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+              <div>
+                <Label className="text-base font-semibold">Modo Escuro</Label>
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  Interface escura para conforto visual e economia de bateria
+                </p>
+              </div>
+              <Switch
+                checked={theme === 'dark'}
+                onCheckedChange={(checked) => {
+                  setTheme(checked ? 'dark' : 'light')
+                }}
+              />
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
+              {theme === 'dark' ? '🌙 Modo escuro ativado' : '☀️ Modo claro ativado'}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Additional Settings */}
         <Card className="mb-6">
           <CardHeader>
@@ -227,7 +256,7 @@ export default function ConfiguracoesAmbiente() {
             <div className="flex items-center justify-between">
               <div>
                 <Label className="text-base">Qualidade do Ar</Label>
-                <p className="text-sm text-gray-600">Monitorar e melhorar a qualidade do ar</p>
+                <p className="text-sm text-gray-600 dark:text-gray-300">Monitorar e melhorar a qualidade do ar</p>
               </div>
               <Switch
                 checked={settings.airQuality}
@@ -236,15 +265,12 @@ export default function ConfiguracoesAmbiente() {
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <Label className="text-base">Modo Noturno</Label>
-                <p className="text-sm text-gray-600">Interface otimizada para uso noturno</p>
+                <Label className="text-base">Modo Noturno do Ambiente</Label>
+                <p className="text-sm text-gray-600 dark:text-gray-300">Ajustes automáticos para período noturno</p>
               </div>
               <Switch
                 checked={settings.nightMode}
-                onCheckedChange={(checked) => {
-                  updateSetting('nightMode', checked)
-                  setTheme(checked ? 'dark' : 'light')
-                }}
+                onCheckedChange={(checked) => updateSetting('nightMode', checked)}
               />
             </div>
           </CardContent>

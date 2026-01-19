@@ -33,6 +33,7 @@ export default function DiarioSono() {
   const { entries, loading, addEntry, updateEntry } = useSleepEntries()
   const [sleepType, setSleepType] = useState<'sono' | 'soneca'>('soneca')
   const [newEntry, setNewEntry] = useState({
+    date: format(new Date(), 'yyyy-MM-dd'),
     startTime: '',
     endTime: '',
     notes: '',
@@ -61,24 +62,26 @@ export default function DiarioSono() {
     }
   }, [])
 
-  // Iniciar registro (apenas hora de dormir)
+  // Iniciar ou salvar registro completo
   const startSleepEntry = async () => {
     if (!newEntry.startTime || submitting) return
 
     setSubmitting(true)
     try {
+      // Se tem endTime, salva registro completo. Senão, apenas inicia.
       await addEntry({
-        date: format(new Date(), 'yyyy-MM-dd'),
+        date: newEntry.date,
         startTime: newEntry.startTime,
-        endTime: null,
+        endTime: newEntry.endTime || null,
         notes: newEntry.notes,
         moodBefore: newEntry.moodBefore,
+        moodAfter: newEntry.endTime ? newEntry.moodAfter : undefined,
         type: sleepType,
-        isPending: true
+        isPending: !newEntry.endTime // Se tem endTime, não está pendente
       })
-      setNewEntry({ startTime: '', endTime: '', notes: '', moodBefore: '', moodAfter: '' })
+      setNewEntry({ date: format(new Date(), 'yyyy-MM-dd'), startTime: '', endTime: '', notes: '', moodBefore: '', moodAfter: '' })
     } catch (error) {
-      console.error('Erro ao iniciar registro:', error)
+      console.error('Erro ao salvar registro:', error)
       alert('Erro ao salvar. Tente novamente.')
     } finally {
       setSubmitting(false)
@@ -99,7 +102,7 @@ export default function DiarioSono() {
         isPending: false
       })
       setEditingEntry(null)
-      setNewEntry({ startTime: '', endTime: '', notes: '', moodBefore: '', moodAfter: '' })
+      setNewEntry({ date: format(new Date(), 'yyyy-MM-dd'), startTime: '', endTime: '', notes: '', moodBefore: '', moodAfter: '' })
     } catch (error) {
       console.error('Erro ao completar registro:', error)
       alert('Erro ao salvar. Tente novamente.')
@@ -111,7 +114,7 @@ export default function DiarioSono() {
   // Cancelar edição
   const cancelEdit = () => {
     setEditingEntry(null)
-    setNewEntry({ startTime: '', endTime: '', notes: '', moodBefore: '', moodAfter: '' })
+    setNewEntry({ date: format(new Date(), 'yyyy-MM-dd'), startTime: '', endTime: '', notes: '', moodBefore: '', moodAfter: '' })
   }
 
   const calculateDuration = (start: string, end: string) => {
@@ -279,25 +282,25 @@ export default function DiarioSono() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-950 flex items-center justify-center transition-colors">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-indigo-600 mx-auto mb-4" />
-          <p className="text-gray-600">Carregando registros...</p>
+          <Loader2 className="w-12 h-12 animate-spin text-indigo-600 dark:text-indigo-400 mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-300">Carregando registros...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-950 p-4 transition-colors">
       <div className="max-w-4xl mx-auto">
         <BackButton />
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-indigo-900 mb-2 flex items-center justify-center gap-2">
+          <h1 className="text-4xl font-bold text-indigo-900 dark:text-indigo-100 mb-2 flex items-center justify-center gap-2">
             <Moon className="w-8 h-8" />
             Diário de Sono
           </h1>
-          <p className="text-gray-600">Registre os horários de sono e sonecas do seu bebê</p>
+          <p className="text-gray-600 dark:text-gray-300">Registre os horários de sono e sonecas do seu bebê</p>
         </div>
 
         {/* Registros Pendentes (em andamento) */}
@@ -495,6 +498,17 @@ export default function DiarioSono() {
                 </div>
 
                 <div>
+                  <Label htmlFor="date">Data do registro *</Label>
+                  <Input
+                    id="date"
+                    type="date"
+                    value={newEntry.date}
+                    onChange={(e) => setNewEntry({...newEntry, date: e.target.value})}
+                    className="text-lg"
+                  />
+                </div>
+
+                <div>
                   <Label htmlFor="startTime">Horário que começou a dormir *</Label>
                   <Input
                     id="startTime"
@@ -503,6 +517,18 @@ export default function DiarioSono() {
                     onChange={(e) => setNewEntry({...newEntry, startTime: e.target.value})}
                     className="text-lg"
                   />
+                </div>
+
+                <div>
+                  <Label htmlFor="endTime">Horário que acordou (opcional - se já souber)</Label>
+                  <Input
+                    id="endTime"
+                    type="time"
+                    value={newEntry.endTime}
+                    onChange={(e) => setNewEntry({...newEntry, endTime: e.target.value})}
+                    className="text-lg"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Deixe vazio se ainda estiver dormindo</p>
                 </div>
 
                 <div>
@@ -515,11 +541,23 @@ export default function DiarioSono() {
                   />
                 </div>
 
+                {newEntry.endTime && (
+                  <div>
+                    <Label htmlFor="moodAfter">Humor ao acordar (opcional)</Label>
+                    <Input
+                      id="moodAfter"
+                      placeholder="Ex: Feliz, Irritado, Calmo..."
+                      value={newEntry.moodAfter}
+                      onChange={(e) => setNewEntry({...newEntry, moodAfter: e.target.value})}
+                    />
+                  </div>
+                )}
+
                 <div>
                   <Label htmlFor="notes">Anotações (opcional)</Label>
                   <Textarea
                     id="notes"
-                    placeholder="Observações antes de dormir..."
+                    placeholder="Observações sobre o sono..."
                     value={newEntry.notes}
                     onChange={(e) => setNewEntry({...newEntry, notes: e.target.value})}
                     rows={2}
@@ -528,12 +566,14 @@ export default function DiarioSono() {
 
                 <Button onClick={startSleepEntry} className="w-full" disabled={!newEntry.startTime || submitting}>
                   {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                  Iniciar Registro
+                  {newEntry.endTime ? 'Salvar Registro Completo' : 'Iniciar Registro'}
                 </Button>
 
-                <p className="text-xs text-gray-500 text-center">
-                  Você poderá completar o registro depois quando o bebê acordar
-                </p>
+                {!newEntry.endTime && (
+                  <p className="text-xs text-gray-500 text-center">
+                    Você poderá completar o registro depois quando o bebê acordar
+                  </p>
+                )}
               </>
             )}
           </CardContent>
