@@ -20,9 +20,19 @@ export function useSleepEntries() {
 
   // Verificar autenticação e carregar dados
   useEffect(() => {
-    checkAuth()
-    loadEntries()
+    initializeData()
   }, [])
+
+  const initializeData = async () => {
+    await checkAuth()
+  }
+
+  // Carregar entradas quando o usuário mudar
+  useEffect(() => {
+    if (user !== null || !supabase) {
+      loadEntries()
+    }
+  }, [user])
 
   const checkAuth = async () => {
     if (!supabase) {
