@@ -13,7 +13,15 @@ const isValidConfig =
 
 // Exportar null se não estiver configurado, para evitar erros
 export const supabase = isValidConfig
-  ? createClient(supabaseUrl, supabaseAnonKey)
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        storageKey: 'soninho-auth-token', // chave única para evitar conflitos
+        storage: typeof window !== 'undefined' ? window.localStorage : undefined
+      }
+    })
   : null
 
 // Types

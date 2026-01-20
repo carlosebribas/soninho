@@ -34,6 +34,13 @@ export function useSleepEntries() {
     }
   }, [user])
 
+  // Migrar dados do localStorage para Supabase quando usuário logar
+  useEffect(() => {
+    if (user && supabase) {
+      migrateLocalDataToSupabase()
+    }
+  }, [user])
+
   const checkAuth = async () => {
     if (!supabase) {
       setLoading(false)
@@ -197,6 +204,56 @@ export function useSleepEntries() {
     } catch (error) {
       console.error('Erro ao deletar registro:', error)
       throw error
+    }
+  }
+
+  const migrateLocalDataToSupabase = async () => {
+    try {
+      const localData = localStorage.getItem('sleepDiary')
+      if (!localData || !user || !supabase) return
+
+      const localEntries: SleepEntry[] = JSON.parse(localData)
+      if (localEntries.length === 0) return
+
+      // Verificar se já existem dados no Supabase
+      const { data: existingData } = await supabase
+        .from('sleep_entries')
+        .select('id')
+        .limit(1)
+
+      // Se já tem dados no Supabase, não migrar (evitar duplicação)
+      if (existingData && existingData.length > 0) {
+        console.log('Dados já existem no Supabase, pulando migração')
+        return
+      }
+
+      console.log(`Migrando ${localEntries.length} registros para o Supabase...`)
+
+      // Migrar cada entrada
+      for (const entry of localEntries) {
+        await supabase.from('sleep_entries').insert({
+          user_id: user.id,
+          date: entry.date,
+          start_time: entry.startTime,
+          end_time: entry.endTime,
+          notes: entry.notes,
+          mood_before: entry.moodBefore,
+          mood_after: entry.moodAfter,
+          type: entry.type,
+          is_pending: entry.isPending
+        })
+      }
+
+      console.log('Migração concluída com sucesso!')
+
+      // Limpar localStorage após migração bem-sucedida
+      localStorage.removeItem('sleepDiary')
+
+      // Recarregar dados do Supabase
+      await loadEntries()
+    } catch (error) {
+      console.error('Erro ao migrar dados:', error)
+      // Não joga erro para não bloquear o app
     }
   }
 
