@@ -4,33 +4,54 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { TrendingUp, Target, Clock, Zap, Download, FileText } from 'lucide-react'
-import { format } from 'date-fns'
+import { TrendingUp, Target, Clock, Zap, Download, FileText, Loader2 } from 'lucide-react'
+import { format, differenceInMonths } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { BackButton } from '@/components/BackButton'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { useSleepEntries } from '@/hooks/useSleepEntries'
 
 interface SleepEntry {
   id: string
   date: string
   startTime: string
-  endTime: string
+  endTime: string | null
   notes: string
-  mood?: string
+  moodBefore?: string
+  moodAfter?: string
+  type: 'sono' | 'soneca'
+  isPending: boolean
 }
 
 export default function Recomendacoes() {
-  const [entries, setEntries] = useState<SleepEntry[]>([])
+  const { entries: rawEntries, loading } = useSleepEntries()
+  const entries = rawEntries.filter(e => !e.isPending && e.endTime) // Apenas registros completos
   const [recommendations, setRecommendations] = useState<string[]>([])
+  const [babyAgeInMonths, setBabyAgeInMonths] = useState<number>(0)
 
+  // Calcular idade do bebê
   useEffect(() => {
-    const saved = localStorage.getItem('sleepDiary')
+    const saved = localStorage.getItem('cadastroBebe')
     if (saved) {
-      const parsedEntries = JSON.parse(saved)
-      setEntries(parsedEntries)
-      generateRecommendations(parsedEntries)
+      try {
+        const babyData = JSON.parse(saved)
+        if (babyData.dataNascimento) {
+          const [year, month, day] = babyData.dataNascimento.split('-').map(Number)
+          const birthDate = new Date(year, month - 1, day)
+          const ageInMonths = differenceInMonths(new Date(), birthDate)
+          setBabyAgeInMonths(ageInMonths)
+        }
+      } catch (error) {
+        console.error('Erro ao calcular idade:', error)
+      }
     }
   }, [])
+
+  useEffect(() => {
+    if (entries.length > 0) {
+      generateRecommendations(entries)
+    }
+  }, [entries, babyAgeInMonths])
 
   const generateRecommendations = (sleepEntries: SleepEntry[]) => {
     const recs: string[] = []
@@ -41,20 +62,92 @@ export default function Recomendacoes() {
       return
     }
 
-    // Calculate average sleep duration
-    const durations = sleepEntries.map(entry => {
+    // Parâmetros ideais por idade
+    let idealNapCount = { min: 2, max: 3 }
+    let idealTotalSleep = { min: 12, max: 16 } // horas por dia
+    let ageRange = ''
+
+    if (babyAgeInMonths < 3) {
+      ageRange = '0-3 meses'
+      idealNapCount = { min: 4, max: 6 }
+      idealTotalSleep = { min: 14, max: 17 }
+    } else if (babyAgeInMonths < 6) {
+      ageRange = '3-6 meses'
+      idealNapCount = { min: 3, max: 4 }
+      idealTotalSleep = { min: 12, max: 16 }
+    } else if (babyAgeInMonths < 9) {
+      ageRange = '6-9 meses'
+      idealNapCount = { min: 2, max: 3 }
+      idealTotalSleep = { min: 12, max: 15 }
+    } else if (babyAgeInMonths < 12) {
+      ageRange = '9-12 meses'
+      idealNapCount = { min: 2, max: 2 }
+      idealTotalSleep = { min: 11, max: 14 }
+    } else if (babyAgeInMonths < 18) {
+      ageRange = '12-18 meses'
+      idealNapCount = { min: 1, max: 2 }
+      idealTotalSleep = { min: 11, max: 14 }
+    } else {
+      ageRange = '18+ meses'
+      idealNapCount = { min: 1, max: 1 }
+      idealTotalSleep = { min: 11, max: 14 }
+    }
+
+    // Análise dos últimos 7 dias
+    const last7Days = sleepEntries.slice(0, 7)
+    const naps = last7Days.filter(e => e.type === 'soneca')
+    const nightSleep = last7Days.filter(e => e.type === 'sono')
+
+    // Duração média das sonecas
+    const napDurations = naps.map(entry => {
+      if (!entry.endTime) return 0
       const start = new Date(`2000-01-01T${entry.startTime}`)
-      const end = new Date(`2000-01-01T${entry.endTime}`)
+      let end = new Date(`2000-01-01T${entry.endTime}`)
+      if (end < start) end = new Date(`2000-01-02T${entry.endTime}`)
       return (end.getTime() - start.getTime()) / (1000 * 60 * 60) // hours
-    })
+    }).filter(d => d > 0)
 
-    const avgDuration = durations.reduce((a, b) => a + b, 0) / durations.length
+    const avgNapDuration = napDurations.length > 0
+      ? napDurations.reduce((a, b) => a + b, 0) / napDurations.length
+      : 0
 
-    // Analyze sleep patterns
-    if (avgDuration < 2) {
-      recs.push("Seu bebê está dormindo menos que o recomendado. Considere ajustar a rotina para mais tempo de sono.")
-    } else if (avgDuration > 4) {
-      recs.push("Excelente! Seu bebê está tendo um bom tempo de sono.")
+    // Duração média do sono noturno
+    const nightDurations = nightSleep.map(entry => {
+      if (!entry.endTime) return 0
+      const start = new Date(`2000-01-01T${entry.startTime}`)
+      let end = new Date(`2000-01-01T${entry.endTime}`)
+      if (end < start) end = new Date(`2000-01-02T${entry.endTime}`)
+      return (end.getTime() - start.getTime()) / (1000 * 60 * 60)
+    }).filter(d => d > 0)
+
+    const avgNightSleep = nightDurations.length > 0
+      ? nightDurations.reduce((a, b) => a + b, 0) / nightDurations.length
+      : 0
+
+    const totalAvgSleep = avgNapDuration * (naps.length / 7) + avgNightSleep
+
+    // Recomendações baseadas em idade
+    if (ageRange) {
+      recs.push(`📊 Análise para bebê de ${ageRange}`)
+    }
+
+    // Quantidade de sonecas
+    const avgNapsPerDay = naps.length / 7
+    if (avgNapsPerDay < idealNapCount.min) {
+      recs.push(`💤 Seu bebê tem ${avgNapsPerDay.toFixed(1)} sonecas por dia em média. Para ${ageRange}, o ideal é ${idealNapCount.min}-${idealNapCount.max} sonecas.`)
+    } else if (avgNapsPerDay > idealNapCount.max) {
+      recs.push(`⚠️ Muitas sonecas (${avgNapsPerDay.toFixed(1)}/dia). Tente consolidar para ${idealNapCount.min}-${idealNapCount.max} sonecas por dia.`)
+    } else {
+      recs.push(`✅ Número de sonecas adequado (${avgNapsPerDay.toFixed(1)}/dia) para ${ageRange}!`)
+    }
+
+    // Total de sono
+    if (totalAvgSleep < idealTotalSleep.min) {
+      recs.push(`⏰ Sono total abaixo do recomendado (${totalAvgSleep.toFixed(1)}h/dia). Ideal: ${idealTotalSleep.min}-${idealTotalSleep.max}h para ${ageRange}.`)
+    } else if (totalAvgSleep > idealTotalSleep.max) {
+      recs.push(`😴 Seu bebê está dormindo mais que o esperado (${totalAvgSleep.toFixed(1)}h/dia). Observe se isso afeta o sono noturno.`)
+    } else {
+      recs.push(`🎯 Total de sono ideal (${totalAvgSleep.toFixed(1)}h/dia) para ${ageRange}!`)
     }
 
     // Check for consistency
@@ -70,22 +163,29 @@ export default function Recomendacoes() {
     }
 
     // Mood analysis
-    const moods = sleepEntries.filter(e => e.mood).map(e => e.mood!.toLowerCase())
-    if (moods.includes('irritado') || moods.includes('choroso')) {
-      recs.push("Quando o bebê acorda irritado, considere verificar se há desconfortos como fome, frio ou calor.")
+    const moodsAfter = sleepEntries.filter(e => e.moodAfter).map(e => e.moodAfter!.toLowerCase())
+    if (moodsAfter.includes('irritado') || moodsAfter.includes('choroso')) {
+      recs.push("🔍 Bebê acorda irritado frequentemente. Verifique desconfortos como fome, fralda ou temperatura.")
     }
 
-    // Recent patterns
-    const recentEntries = sleepEntries.slice(0, 7) // Last 7 entries
-    const recentAvg = recentEntries.length > 0 ?
-      recentEntries.reduce((sum, e) => {
-        const start = new Date(`2000-01-01T${e.startTime}`)
-        const end = new Date(`2000-01-01T${e.endTime}`)
-        return sum + (end.getTime() - start.getTime()) / (1000 * 60 * 60)
-      }, 0) / recentEntries.length : 0
+    const moodsBefore = sleepEntries.filter(e => e.moodBefore).map(e => e.moodBefore!.toLowerCase())
+    if (moodsBefore.includes('agitado') || moodsBefore.includes('irritado')) {
+      recs.push("😌 Bebê agitado antes de dormir? Tente acalmar com rotina relaxante (banho, música suave).")
+    }
 
-    if (recentAvg < avgDuration * 0.8) {
-      recs.push("O sono recente está abaixo da média. Verifique se há mudanças na rotina.")
+    // Consistência de horários
+    if (nightSleep.length >= 3) {
+      const bedtimes = nightSleep.map(e => {
+        const [hours, minutes] = e.startTime.split(':').map(Number)
+        return hours * 60 + minutes
+      })
+      const variance = calculateVariance(bedtimes)
+
+      if (variance > 60) {
+        recs.push("🕐 Horário de dormir varia muito. Rotina consistente ajuda o bebê a dormir melhor.")
+      } else {
+        recs.push("✅ Horário de dormir consistente! Continue assim.")
+      }
     }
 
     setRecommendations(recs)
@@ -101,17 +201,32 @@ export default function Recomendacoes() {
     if (entries.length === 0) return null
 
     const durations = entries.map(entry => {
+      if (!entry.endTime) return 0
       const start = new Date(`2000-01-01T${entry.startTime}`)
-      const end = new Date(`2000-01-01T${entry.endTime}`)
+      let end = new Date(`2000-01-01T${entry.endTime}`)
+      if (end < start) end = new Date(`2000-01-02T${entry.endTime}`)
       return (end.getTime() - start.getTime()) / (1000 * 60 * 60)
-    })
+    }).filter(d => d > 0)
+
+    if (durations.length === 0) return null
 
     const totalSleep = durations.reduce((a, b) => a + b, 0)
-    const avgSleep = totalSleep / entries.length
+    const avgSleep = totalSleep / durations.length
     const maxSleep = Math.max(...durations)
     const minSleep = Math.min(...durations)
 
-    return { totalSleep, avgSleep, maxSleep, minSleep, entriesCount: entries.length }
+    return { totalSleep, avgSleep, maxSleep, minSleep, entriesCount: durations.length }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-950 flex items-center justify-center transition-colors">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-indigo-600 dark:text-indigo-400 mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-300">Carregando recomendações...</p>
+        </div>
+      </div>
+    )
   }
 
   const stats = getSleepStats()

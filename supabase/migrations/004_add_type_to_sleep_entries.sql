@@ -1,4 +1,5 @@
 -- Adicionar coluna 'type' para diferenciar sono noturno de sonecas
+-- Migration criada em 2026-01-20
 
 ALTER TABLE sleep_entries
 ADD COLUMN IF NOT EXISTS type TEXT NOT NULL DEFAULT 'soneca';

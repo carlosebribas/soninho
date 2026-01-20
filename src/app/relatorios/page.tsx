@@ -5,33 +5,31 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
-import { TrendingUp, Calendar, Clock, Moon, Download, FileText } from 'lucide-react'
+import { TrendingUp, Calendar, Clock, Moon, Download, FileText, Loader2 } from 'lucide-react'
 import { format, subDays, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { BackButton } from '@/components/BackButton'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { useAuth } from '@/hooks/useAuth'
+import { useSleepEntries } from '@/hooks/useSleepEntries'
 
 interface SleepEntry {
   id: string
   date: string
   startTime: string
-  endTime: string
+  endTime: string | null
   notes: string
-  mood?: string
+  moodBefore?: string
+  moodAfter?: string
+  type: 'sono' | 'soneca'
+  isPending: boolean
 }
 
 export default function Relatorios() {
   const { hasAccess } = useAuth()
-  const [entries, setEntries] = useState<SleepEntry[]>([])
+  const { entries: rawEntries, loading } = useSleepEntries()
+  const entries = rawEntries.filter(e => !e.isPending && e.endTime) // Apenas registros completos
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('7d')
-
-  useEffect(() => {
-    const saved = localStorage.getItem('sleepDiary')
-    if (saved) {
-      setEntries(JSON.parse(saved))
-    }
-  }, [])
 
   const getFilteredEntries = () => {
     const now = new Date()
@@ -57,8 +55,10 @@ export default function Relatorios() {
   const getSleepData = () => {
     const filtered = getFilteredEntries()
     return filtered.map(entry => {
+      if (!entry.endTime) return null
       const start = new Date(`2000-01-01T${entry.startTime}`)
-      const end = new Date(`2000-01-01T${entry.endTime}`)
+      let end = new Date(`2000-01-01T${entry.endTime}`)
+      if (end < start) end = new Date(`2000-01-02T${entry.endTime}`)
       const duration = (end.getTime() - start.getTime()) / (1000 * 60 * 60) // hours
 
       return {
@@ -67,9 +67,10 @@ export default function Relatorios() {
         duration: Number(duration.toFixed(1)),
         startTime: entry.startTime,
         endTime: entry.endTime,
-        mood: entry.mood || 'N/A'
+        type: entry.type,
+        moodAfter: entry.moodAfter || 'N/A'
       }
-    }).reverse() // Most recent first
+    }).filter(Boolean).reverse() // Most recent first
   }
 
   const getWeeklyAverage = () => {
@@ -77,8 +78,10 @@ export default function Relatorios() {
     const weeklyData: { [key: string]: number[] } = {}
 
     filtered.forEach(entry => {
+      if (!entry.endTime) return
       const start = new Date(`2000-01-01T${entry.startTime}`)
-      const end = new Date(`2000-01-01T${entry.endTime}`)
+      let end = new Date(`2000-01-01T${entry.endTime}`)
+      if (end < start) end = new Date(`2000-01-02T${entry.endTime}`)
       const duration = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
 
       const weekStart = startOfWeek(new Date(entry.date), { weekStartsOn: 1 })
@@ -101,7 +104,7 @@ export default function Relatorios() {
     const moodCount: { [key: string]: number } = {}
 
     filtered.forEach(entry => {
-      const mood = entry.mood?.toLowerCase() || 'não informado'
+      const mood = entry.moodAfter?.toLowerCase() || 'não informado'
       moodCount[mood] = (moodCount[mood] || 0) + 1
     })
 
@@ -113,18 +116,33 @@ export default function Relatorios() {
     }))
   }
 
+  const getTypeDistribution = () => {
+    const filtered = getFilteredEntries()
+    const naps = filtered.filter(e => e.type === 'soneca').length
+    const nightSleep = filtered.filter(e => e.type === 'sono').length
+
+    return [
+      { name: 'Sonecas', value: naps, color: '#f97316' },
+      { name: 'Sono Noturno', value: nightSleep, color: '#6366f1' }
+    ]
+  }
+
   const getStats = () => {
     const filtered = getFilteredEntries()
     if (filtered.length === 0) return null
 
     const durations = filtered.map(entry => {
+      if (!entry.endTime) return 0
       const start = new Date(`2000-01-01T${entry.startTime}`)
-      const end = new Date(`2000-01-01T${entry.endTime}`)
+      let end = new Date(`2000-01-01T${entry.endTime}`)
+      if (end < start) end = new Date(`2000-01-02T${entry.endTime}`)
       return (end.getTime() - start.getTime()) / (1000 * 60 * 60)
-    })
+    }).filter(d => d > 0)
+
+    if (durations.length === 0) return null
 
     const totalSleep = durations.reduce((a, b) => a + b, 0)
-    const avgSleep = totalSleep / filtered.length
+    const avgSleep = totalSleep / durations.length
     const maxSleep = Math.max(...durations)
     const minSleep = Math.min(...durations)
 
@@ -140,7 +158,19 @@ export default function Relatorios() {
   const sleepData = getSleepData()
   const weeklyData = getWeeklyAverage()
   const moodData = getMoodDistribution()
+  const typeData = getTypeDistribution()
   const stats = getStats()
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-950 flex items-center justify-center transition-colors">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-indigo-600 dark:text-indigo-400 mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-300">Carregando relatórios...</p>
+        </div>
+      </div>
+    )
+  }
 
   const exportToCSV = () => {
     const filtered = getFilteredEntries()
@@ -159,9 +189,9 @@ export default function Relatorios() {
       return [
         format(new Date(entry.date), 'dd/MM/yyyy', { locale: ptBR }),
         entry.startTime,
-        entry.endTime,
+        entry.endTime || '',
         duration,
-        entry.mood || 'N/A',
+        entry.moodAfter || 'N/A',
         entry.notes || ''
       ]
     })
@@ -307,9 +337,9 @@ export default function Relatorios() {
                 <tr>
                   <td>${format(new Date(entry.date), 'dd/MM/yyyy', { locale: ptBR })}</td>
                   <td>${entry.startTime}</td>
-                  <td>${entry.endTime}</td>
+                  <td>${entry.endTime || '-'}</td>
                   <td>${duration}h</td>
-                  <td>${entry.mood || 'N/A'}</td>
+                  <td>${entry.moodAfter || 'N/A'}</td>
                 </tr>
               `
             }).join('')}
@@ -502,20 +532,23 @@ export default function Relatorios() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {sleepData.slice(0, 7).map((entry, index) => (
-                  <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <div className="font-semibold">{entry.date}</div>
-                      <div className="text-sm text-gray-600">
-                        {entry.startTime} - {entry.endTime}
+                {sleepData.slice(0, 7).map((entry, index) => {
+                  if (!entry) return null
+                  return (
+                    <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <div className="font-semibold">{entry.date}</div>
+                        <div className="text-sm text-gray-600">
+                          {entry.startTime} - {entry.endTime}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold text-lg">{entry.duration}h</div>
+                        <div className="text-sm text-gray-500">{entry.moodAfter}</div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="font-bold text-lg">{entry.duration}h</div>
-                      <div className="text-sm text-gray-500">{entry.mood}</div>
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </CardContent>
           </Card>

@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { History, Plus, Calendar, Baby, Star } from 'lucide-react'
+import { History, Plus, Calendar, Baby, Star, Pencil, Trash2, Loader2 } from 'lucide-react'
 import { format, differenceInMonths, differenceInDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { BackButton } from '@/components/BackButton'
@@ -24,15 +24,24 @@ interface Milestone {
 
 export default function HistoricoDesenvolvimento() {
   const [milestones, setMilestones] = useState<Milestone[]>([])
-  const [newMilestone, setNewMilestone] = useState({
+  const [newMilestone, setNewMilestone] = useState<{
+    date: string
+    title: string
+    description: string
+    category: 'fisico' | 'cognitivo' | 'social' | 'linguagem' | 'sono'
+    age: string
+    notes: string
+  }>({
     date: format(new Date(), 'yyyy-MM-dd'),
     title: '',
     description: '',
-    category: 'fisico' as const,
+    category: 'fisico',
     age: '',
     notes: ''
   })
   const [babyBirthDate, setBabyBirthDate] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   // Load baby birth date from localStorage
   useEffect(() => {
@@ -94,7 +103,7 @@ export default function HistoricoDesenvolvimento() {
           date: format(new Date(Date.now() - 86400000 * 60), 'yyyy-MM-dd'),
           title: 'Controle da Cabeça',
           description: 'Consegue manter a cabeça erguida por alguns segundos',
-          category: 'fisico',
+          category: 'fisico' as const,
           age: '3 meses',
           notes: 'Melhorou muito depois das sessões de fisioterapia'
         },
@@ -129,25 +138,77 @@ export default function HistoricoDesenvolvimento() {
   const addMilestone = () => {
     if (!newMilestone.title || !newMilestone.description) return
 
-    const milestone: Milestone = {
-      id: Date.now().toString(),
-      date: newMilestone.date,
-      title: newMilestone.title,
-      description: newMilestone.description,
-      category: newMilestone.category,
-      age: newMilestone.age,
-      notes: newMilestone.notes
+    if (editingId) {
+      // Atualizar milestone existente
+      setMilestones(milestones.map(m =>
+        m.id === editingId
+          ? {
+              ...m,
+              date: newMilestone.date,
+              title: newMilestone.title,
+              description: newMilestone.description,
+              category: newMilestone.category,
+              age: newMilestone.age,
+              notes: newMilestone.notes
+            }
+          : m
+      ))
+      setEditingId(null)
+    } else {
+      // Adicionar novo milestone
+      const milestone: Milestone = {
+        id: Date.now().toString(),
+        date: newMilestone.date,
+        title: newMilestone.title,
+        description: newMilestone.description,
+        category: newMilestone.category,
+        age: newMilestone.age,
+        notes: newMilestone.notes
+      }
+      setMilestones([milestone, ...milestones])
     }
 
-    setMilestones([milestone, ...milestones])
     setNewMilestone({
       date: format(new Date(), 'yyyy-MM-dd'),
       title: '',
       description: '',
-      category: 'fisico',
+      category: 'fisico' as const,
       age: '',
       notes: ''
     })
+  }
+
+  const startEditing = (milestone: Milestone) => {
+    setNewMilestone({
+      date: milestone.date,
+      title: milestone.title,
+      description: milestone.description,
+      category: milestone.category,
+      age: milestone.age,
+      notes: milestone.notes
+    })
+    setEditingId(milestone.id)
+  }
+
+  const cancelEditing = () => {
+    setEditingId(null)
+    setNewMilestone({
+      date: format(new Date(), 'yyyy-MM-dd'),
+      title: '',
+      description: '',
+      category: 'fisico' as const,
+      age: '',
+      notes: ''
+    })
+  }
+
+  const deleteMilestone = (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir este marco?')) return
+    setDeletingId(id)
+    setTimeout(() => {
+      setMilestones(milestones.filter(m => m.id !== id))
+      setDeletingId(null)
+    }, 300)
   }
 
   const getCategoryColor = (category: string) => {
@@ -284,9 +345,16 @@ export default function HistoricoDesenvolvimento() {
                 />
               </div>
             </div>
-            <Button onClick={addMilestone} className="w-full">
-              Adicionar Marco
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={addMilestone} className="flex-1">
+                {editingId ? 'Salvar Alterações' : 'Adicionar Marco'}
+              </Button>
+              {editingId && (
+                <Button onClick={cancelEditing} variant="outline">
+                  Cancelar
+                </Button>
+              )}
+            </div>
           </CardContent>
         </Card>
 
@@ -316,12 +384,33 @@ export default function HistoricoDesenvolvimento() {
                     <CardContent>
                       <p className="text-gray-700 mb-3">{milestone.description}</p>
                       {milestone.notes && (
-                        <div className="bg-orange-50 p-3 rounded-lg">
+                        <div className="bg-orange-50 p-3 rounded-lg mb-3">
                           <p className="text-sm text-orange-800">
                             <strong>Anotações:</strong> {milestone.notes}
                           </p>
                         </div>
                       )}
+                      <div className="flex gap-2 mt-4 pt-3 border-t">
+                        <button
+                          onClick={() => startEditing(milestone)}
+                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        >
+                          <Pencil className="w-4 h-4" />
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => deleteMilestone(milestone.id)}
+                          disabled={deletingId === milestone.id}
+                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                        >
+                          {deletingId === milestone.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                          Excluir
+                        </button>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}

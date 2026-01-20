@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
-import { Moon, Sun, Clock, Plus, Coffee, TrendingUp, AlertCircle, Lightbulb, Loader2 } from 'lucide-react'
+import { Moon, Sun, Clock, Plus, Coffee, TrendingUp, AlertCircle, Lightbulb, Loader2, Pencil, Trash2 } from 'lucide-react'
 import { format, differenceInMinutes, differenceInMonths, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { BackButton } from '@/components/BackButton'
@@ -30,7 +30,7 @@ interface SleepWindow {
 }
 
 export default function DiarioSono() {
-  const { entries, loading, addEntry, updateEntry } = useSleepEntries()
+  const { entries, loading, addEntry, updateEntry, deleteEntry } = useSleepEntries()
   const [sleepType, setSleepType] = useState<'sono' | 'soneca'>('soneca')
   const [newEntry, setNewEntry] = useState({
     date: format(new Date(), 'yyyy-MM-dd'),
@@ -43,6 +43,7 @@ export default function DiarioSono() {
   const [editingEntry, setEditingEntry] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [babyAgeInMonths, setBabyAgeInMonths] = useState<number>(0)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   // Calcular idade do bebê em meses
   useEffect(() => {
@@ -115,6 +116,60 @@ export default function DiarioSono() {
   const cancelEdit = () => {
     setEditingEntry(null)
     setNewEntry({ date: format(new Date(), 'yyyy-MM-dd'), startTime: '', endTime: '', notes: '', moodBefore: '', moodAfter: '' })
+  }
+
+  // Editar registro completo
+  const startEditingFullEntry = (entry: SleepEntry) => {
+    setNewEntry({
+      date: entry.date,
+      startTime: entry.startTime,
+      endTime: entry.endTime || '',
+      notes: entry.notes,
+      moodBefore: entry.moodBefore || '',
+      moodAfter: entry.moodAfter || ''
+    })
+    setSleepType(entry.type)
+    setEditingEntry(entry.id)
+  }
+
+  // Salvar edição de registro completo
+  const saveFullEntryEdit = async () => {
+    if (!editingEntry || !newEntry.startTime || submitting) return
+
+    setSubmitting(true)
+    try {
+      await updateEntry(editingEntry, {
+        date: newEntry.date,
+        startTime: newEntry.startTime,
+        endTime: newEntry.endTime || null,
+        notes: newEntry.notes,
+        moodBefore: newEntry.moodBefore,
+        moodAfter: newEntry.moodAfter,
+        type: sleepType,
+        isPending: !newEntry.endTime
+      })
+      cancelEdit()
+    } catch (error) {
+      console.error('Erro ao atualizar registro:', error)
+      alert('Erro ao atualizar. Tente novamente.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  // Deletar registro
+  const handleDelete = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir este registro?')) return
+
+    setDeletingId(id)
+    try {
+      await deleteEntry(id)
+    } catch (error) {
+      console.error('Erro ao deletar:', error)
+      alert('Erro ao deletar. Tente novamente.')
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   const calculateDuration = (start: string, end: string) => {
@@ -420,16 +475,74 @@ export default function DiarioSono() {
           </CardHeader>
           <CardContent className="space-y-4">
             {editingEntry ? (
-              // Modo de completar registro
+              // Modo de completar ou editar registro
               <>
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-4">
-                  <p className="text-sm text-blue-800">
-                    Completando registro iniciado às {entries.find(e => e.id === editingEntry)?.startTime}
-                  </p>
-                </div>
+                {entries.find(e => e.id === editingEntry)?.isPending ? (
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-4">
+                    <p className="text-sm text-blue-800">
+                      Completando registro iniciado às {entries.find(e => e.id === editingEntry)?.startTime}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="bg-green-50 p-4 rounded-lg border border-green-200 mb-4">
+                    <p className="text-sm text-green-800">
+                      Editando registro de {entries.find(e => e.id === editingEntry)?.date}
+                    </p>
+                  </div>
+                )}
+
+                {!entries.find(e => e.id === editingEntry)?.isPending && (
+                  <>
+                    <div>
+                      <Label>Tipo de Registro</Label>
+                      <div className="flex gap-4 mt-2">
+                        <Button
+                          type="button"
+                          variant={sleepType === 'sono' ? 'default' : 'outline'}
+                          onClick={() => setSleepType('sono')}
+                          className="flex-1"
+                        >
+                          <Moon className="w-4 h-4 mr-2" />
+                          Sono Noturno
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={sleepType === 'soneca' ? 'default' : 'outline'}
+                          onClick={() => setSleepType('soneca')}
+                          className="flex-1"
+                        >
+                          <Coffee className="w-4 h-4 mr-2" />
+                          Soneca
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="date">Data do registro *</Label>
+                      <Input
+                        id="date"
+                        type="date"
+                        value={newEntry.date}
+                        onChange={(e) => setNewEntry({...newEntry, date: e.target.value})}
+                        className="text-lg"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="startTime">Horário que começou a dormir *</Label>
+                      <Input
+                        id="startTime"
+                        type="time"
+                        value={newEntry.startTime}
+                        onChange={(e) => setNewEntry({...newEntry, startTime: e.target.value})}
+                        className="text-lg"
+                      />
+                    </div>
+                  </>
+                )}
 
                 <div>
-                  <Label htmlFor="endTime">Horário que acordou *</Label>
+                  <Label htmlFor="endTime">{entries.find(e => e.id === editingEntry)?.isPending ? 'Horário que acordou *' : 'Horário que acordou'}</Label>
                   <Input
                     id="endTime"
                     type="time"
@@ -461,9 +574,20 @@ export default function DiarioSono() {
                 </div>
 
                 <div className="flex gap-2">
-                  <Button onClick={() => completeSleepEntry(editingEntry)} className="flex-1" disabled={submitting}>
+                  <Button
+                    onClick={() => {
+                      const entry = entries.find(e => e.id === editingEntry)
+                      if (entry?.isPending) {
+                        completeSleepEntry(editingEntry)
+                      } else {
+                        saveFullEntryEdit()
+                      }
+                    }}
+                    className="flex-1"
+                    disabled={submitting}
+                  >
                     {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                    Salvar Registro Completo
+                    {entries.find(e => e.id === editingEntry)?.isPending ? 'Completar Registro' : 'Salvar Alterações'}
                   </Button>
                   <Button onClick={cancelEdit} variant="outline" disabled={submitting}>
                     Cancelar
@@ -596,12 +720,35 @@ export default function DiarioSono() {
                       {entry.type === 'soneca' ? 'Soneca' : 'Sono Noturno'}
                     </span>
                   </div>
-                  {entry.endTime && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Clock className="w-4 h-4" />
-                      {calculateDuration(entry.startTime, entry.endTime).text}
+                  <div className="flex items-center gap-3">
+                    {entry.endTime && (
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Clock className="w-4 h-4" />
+                        {calculateDuration(entry.startTime, entry.endTime).text}
+                      </div>
+                    )}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => startEditingFullEntry(entry)}
+                        className="p-2 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Editar"
+                      >
+                        <Pencil className="w-4 h-4 text-blue-600" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(entry.id)}
+                        disabled={deletingId === entry.id}
+                        className="p-2 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                        title="Excluir"
+                      >
+                        {deletingId === entry.id ? (
+                          <Loader2 className="w-4 h-4 text-red-600 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4 text-red-600" />
+                        )}
+                      </button>
                     </div>
-                  )}
+                  </div>
                 </div>
                 <div className="flex items-center gap-4 mb-2">
                   <div className="flex items-center gap-2">
