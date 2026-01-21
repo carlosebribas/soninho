@@ -67,9 +67,11 @@ export default function DiarioSono() {
 
     setSubmitting(true)
     try {
-      // Se tem endTime, salva registro completo. Senão, apenas inicia.
+      // IMPORTANTE: A data do registro SEMPRE será a data de INÍCIO digitada pelo usuário,
+      // independente do horário de término. Por exemplo:
+      // Data: 20/01/2025, Início: 19:00, Término: 06:45 → Registro ficará com data 20/01/2025
       await addEntry({
-        date: newEntry.date,
+        date: newEntry.date, // Data de início sempre prevalece
         startTime: newEntry.startTime,
         endTime: newEntry.endTime || null,
         notes: newEntry.notes,
@@ -783,7 +785,12 @@ export default function DiarioSono() {
                   </p>
                 )}
                 <p className="mt-2 text-xs text-gray-500">
-                  {format(new Date(entry.date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                  {(() => {
+                    // Parse manual da data para evitar problemas de timezone
+                    const [year, month, day] = entry.date.split('-').map(Number)
+                    const dateObj = new Date(year, month - 1, day)
+                    return format(dateObj, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
+                  })()}
                 </p>
               </CardContent>
             </Card>

@@ -151,15 +151,24 @@ export function useSleepEntries() {
   const updateEntry = async (id: string, updates: Partial<SleepEntry>) => {
     try {
       if (supabase && user) {
+        // Preparar objeto de atualização (incluir date se foi fornecido)
+        const updateData: any = {
+          end_time: updates.endTime,
+          mood_after: updates.moodAfter,
+          notes: updates.notes,
+          is_pending: updates.isPending
+        }
+
+        // Adicionar campos opcionais somente se fornecidos
+        if (updates.date !== undefined) updateData.date = updates.date
+        if (updates.startTime !== undefined) updateData.start_time = updates.startTime
+        if (updates.type !== undefined) updateData.type = updates.type
+        if (updates.moodBefore !== undefined) updateData.mood_before = updates.moodBefore
+
         // Atualizar no Supabase
         const { error } = await supabase
           .from('sleep_entries')
-          .update({
-            end_time: updates.endTime,
-            mood_after: updates.moodAfter,
-            notes: updates.notes,
-            is_pending: updates.isPending
-          })
+          .update(updateData)
           .eq('id', id)
           .eq('user_id', user.id)
 
