@@ -11,19 +11,26 @@ import { History, Plus, Calendar, Baby, Star, Pencil, Trash2, Loader2 } from 'lu
 import { format, differenceInMonths, differenceInDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { BackButton } from '@/components/BackButton'
+import { useBabyProfile } from '@/hooks/useBabyProfile'
+import { useMilestones } from '@/hooks/useMilestones'
 
 interface Milestone {
   id: string
-  date: string
+  date?: string
   title: string
-  description: string
+  description?: string
   category: 'fisico' | 'cognitivo' | 'social' | 'linguagem' | 'sono'
   age: string
-  notes: string
+  notes?: string
+  achievedDate?: string
+  milestoneType?: 'motor' | 'cognitive' | 'social' | 'language'
+  isAchieved?: boolean
 }
 
 export default function HistoricoDesenvolvimento() {
-  const [milestones, setMilestones] = useState<Milestone[]>([])
+  const { profile, loading: loadingProfile } = useBabyProfile()
+  const { milestones: milestonesData, loading: loadingMilestones, addMilestone, updateMilestone, deleteMilestone } = useMilestones()
+
   const [newMilestone, setNewMilestone] = useState<{
     date: string
     title: string
@@ -42,17 +49,50 @@ export default function HistoricoDesenvolvimento() {
   const [babyBirthDate, setBabyBirthDate] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
 
-  // Load baby birth date from localStorage
-  useEffect(() => {
-    const cadastro = localStorage.getItem('cadastroBebe')
-    if (cadastro) {
-      const data = JSON.parse(cadastro)
-      if (data.dataNascimento) {
-        setBabyBirthDate(data.dataNascimento)
-      }
+  // Converter milestones do hook para o formato da página
+  const milestones: Milestone[] = milestonesData.map(m => ({
+    id: m.id,
+    date: m.achievedDate || format(new Date(), 'yyyy-MM-dd'),
+    title: m.title,
+    description: m.description || '',
+    category: mapMilestoneTypeToCategory(m.milestoneType),
+    age: '',
+    notes: m.notes || '',
+    achievedDate: m.achievedDate,
+    milestoneType: m.milestoneType,
+    isAchieved: m.isAchieved
+  }))
+
+  // Mapear tipo do Supabase para categoria da UI
+  function mapMilestoneTypeToCategory(type?: 'motor' | 'cognitive' | 'social' | 'language'): 'fisico' | 'cognitivo' | 'social' | 'linguagem' | 'sono' {
+    switch(type) {
+      case 'motor': return 'fisico'
+      case 'cognitive': return 'cognitivo'
+      case 'social': return 'social'
+      case 'language': return 'linguagem'
+      default: return 'fisico'
     }
-  }, [])
+  }
+
+  // Mapear categoria da UI para tipo do Supabase
+  function mapCategoryToMilestoneType(category: string): 'motor' | 'cognitive' | 'social' | 'language' {
+    switch(category) {
+      case 'fisico': return 'motor'
+      case 'cognitivo': return 'cognitive'
+      case 'social': return 'social'
+      case 'linguagem': return 'language'
+      default: return 'motor'
+    }
+  }
+
+  // Carregar data de nascimento do perfil
+  useEffect(() => {
+    if (profile?.dataNascimento) {
+      setBabyBirthDate(profile.dataNascimento)
+    }
+  }, [profile])
 
   // Calculate age based on milestone date and birth date
   const calculateAge = (milestoneDate: string): string => {
@@ -81,51 +121,7 @@ export default function HistoricoDesenvolvimento() {
     }
   }
 
-  // Load milestones from localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem('developmentMilestones')
-    if (saved) {
-      setMilestones(JSON.parse(saved))
-    } else {
-      // Initialize with sample milestones
-      const sampleMilestones: Milestone[] = [
-        {
-          id: '1',
-          date: format(new Date(Date.now() - 86400000 * 30), 'yyyy-MM-dd'),
-          title: 'Primeiro Sorriso',
-          description: 'O bebê deu seu primeiro sorriso social',
-          category: 'social',
-          age: '2 meses',
-          notes: 'Foi durante uma conversa comigo, muito fofo!'
-        },
-        {
-          id: '2',
-          date: format(new Date(Date.now() - 86400000 * 60), 'yyyy-MM-dd'),
-          title: 'Controle da Cabeça',
-          description: 'Consegue manter a cabeça erguida por alguns segundos',
-          category: 'fisico' as const,
-          age: '3 meses',
-          notes: 'Melhorou muito depois das sessões de fisioterapia'
-        },
-        {
-          id: '3',
-          date: format(new Date(Date.now() - 86400000 * 90), 'yyyy-MM-dd'),
-          title: 'Primeira Palavra',
-          description: 'Disse "mamã" pela primeira vez',
-          category: 'linguagem',
-          age: '1 ano',
-          notes: 'Foi muito emocionante! Repetiu várias vezes.'
-        }
-      ]
-      setMilestones(sampleMilestones)
-      localStorage.setItem('developmentMilestones', JSON.stringify(sampleMilestones))
-    }
-  }, [])
-
-  // Save milestones to localStorage
-  useEffect(() => {
-    localStorage.setItem('developmentMilestones', JSON.stringify(milestones))
-  }, [milestones])
+  // Dados já são carregados automaticamente pelo hook useMilestones
 
   // Auto-calculate age when date changes
   useEffect(() => {
@@ -135,57 +131,60 @@ export default function HistoricoDesenvolvimento() {
     }
   }, [newMilestone.date, babyBirthDate])
 
-  const addMilestone = () => {
-    if (!newMilestone.title || !newMilestone.description) return
+  const handleAddMilestone = async () => {
+    if (!newMilestone.title || !newMilestone.description || submitting) return
 
-    if (editingId) {
-      // Atualizar milestone existente
-      setMilestones(milestones.map(m =>
-        m.id === editingId
-          ? {
-              ...m,
-              date: newMilestone.date,
-              title: newMilestone.title,
-              description: newMilestone.description,
-              category: newMilestone.category,
-              age: newMilestone.age,
-              notes: newMilestone.notes
-            }
-          : m
-      ))
-      setEditingId(null)
-    } else {
-      // Adicionar novo milestone
-      const milestone: Milestone = {
-        id: Date.now().toString(),
-        date: newMilestone.date,
-        title: newMilestone.title,
-        description: newMilestone.description,
-        category: newMilestone.category,
-        age: newMilestone.age,
-        notes: newMilestone.notes
+    setSubmitting(true)
+    try {
+      if (editingId) {
+        // Atualizar milestone existente
+        await updateMilestone(editingId, {
+          milestoneType: mapCategoryToMilestoneType(newMilestone.category),
+          title: newMilestone.title,
+          description: newMilestone.description,
+          achievedDate: newMilestone.date,
+          notes: newMilestone.notes,
+          isAchieved: true
+        })
+        setEditingId(null)
+      } else {
+        // Adicionar novo milestone
+        await addMilestone({
+          milestoneType: mapCategoryToMilestoneType(newMilestone.category),
+          title: newMilestone.title,
+          description: newMilestone.description,
+          achievedDate: newMilestone.date,
+          notes: newMilestone.notes,
+          isAchieved: true
+        })
       }
-      setMilestones([milestone, ...milestones])
-    }
 
-    setNewMilestone({
-      date: format(new Date(), 'yyyy-MM-dd'),
-      title: '',
-      description: '',
-      category: 'fisico' as const,
-      age: '',
-      notes: ''
-    })
+      // Limpar formulário
+      setNewMilestone({
+        date: format(new Date(), 'yyyy-MM-dd'),
+        title: '',
+        description: '',
+        category: 'fisico',
+        age: '',
+        notes: ''
+      })
+    } catch (error) {
+      console.error('Erro ao salvar marco:', error)
+      alert('Erro ao salvar. Tente novamente.')
+    } finally {
+      setSubmitting(false)
+    }
   }
+
 
   const startEditing = (milestone: Milestone) => {
     setNewMilestone({
-      date: milestone.date,
+      date: milestone.date || milestone.achievedDate || format(new Date(), 'yyyy-MM-dd'),
       title: milestone.title,
-      description: milestone.description,
+      description: milestone.description || '',
       category: milestone.category,
       age: milestone.age,
-      notes: milestone.notes
+      notes: milestone.notes || ''
     })
     setEditingId(milestone.id)
   }
@@ -202,13 +201,18 @@ export default function HistoricoDesenvolvimento() {
     })
   }
 
-  const deleteMilestone = (id: string) => {
+  const handleDeleteMilestone = async (id: string) => {
     if (!confirm('Tem certeza que deseja excluir este marco?')) return
+
     setDeletingId(id)
-    setTimeout(() => {
-      setMilestones(milestones.filter(m => m.id !== id))
+    try {
+      await deleteMilestone(id)
+    } catch (error) {
+      console.error('Erro ao deletar marco:', error)
+      alert('Erro ao deletar. Tente novamente.')
+    } finally {
       setDeletingId(null)
-    }, 300)
+    }
   }
 
   const getCategoryColor = (category: string) => {
@@ -251,6 +255,18 @@ export default function HistoricoDesenvolvimento() {
     acc[milestone.category].push(milestone)
     return acc
   }, {} as Record<string, Milestone[]>)
+
+  // Loading state
+  if (loadingProfile || loadingMilestones) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-orange-100 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-orange-600 mx-auto mb-4" />
+          <p className="text-gray-600">Carregando histórico...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-orange-100 p-4">
@@ -346,7 +362,7 @@ export default function HistoricoDesenvolvimento() {
               </div>
             </div>
             <div className="flex gap-2">
-              <Button onClick={addMilestone} className="flex-1">
+              <Button onClick={handleAddMilestone} disabled={submitting} className="flex-1">
                 {editingId ? 'Salvar Alterações' : 'Adicionar Marco'}
               </Button>
               {editingId && (
@@ -378,7 +394,8 @@ export default function HistoricoDesenvolvimento() {
                       </div>
                       <div className="flex items-center gap-2 text-sm text-gray-500">
                         <Calendar className="w-4 h-4" />
-                        {format(new Date(milestone.date), "dd/MM/yyyy", { locale: ptBR })}
+                        {milestone.date && format(new Date(milestone.date), "dd/MM/yyyy", { locale: ptBR })}
+                        {!milestone.date && milestone.achievedDate && format(new Date(milestone.achievedDate), "dd/MM/yyyy", { locale: ptBR })}
                       </div>
                     </CardHeader>
                     <CardContent>
@@ -399,7 +416,7 @@ export default function HistoricoDesenvolvimento() {
                           Editar
                         </button>
                         <button
-                          onClick={() => deleteMilestone(milestone.id)}
+                          onClick={() => handleDeleteMilestone(milestone.id)}
                           disabled={deletingId === milestone.id}
                           className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
                         >
