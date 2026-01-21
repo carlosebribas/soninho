@@ -1,35 +1,30 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
-import { Baby, Calendar, Clock, MapPin, User, Stethoscope, Edit2 } from 'lucide-react'
+import { Baby, Calendar, MapPin, User, Stethoscope, Edit2, Loader2 } from 'lucide-react'
 import { Button } from './ui/button'
 import Link from 'next/link'
 import { differenceInDays, differenceInMonths, differenceInYears, format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-
-interface BabyData {
-  nome: string
-  dataNascimento: string
-  horaNascimento: string
-  hospital: string
-  cidadeNascimento: string
-  nomeMae: string
-  nomePai: string
-  pediatra: string
-  telefonePediatra: string
-  hospitalReferencia: string
-}
+import { useBabyProfile } from '@/hooks/useBabyProfile'
 
 export function BabyInfoCard() {
-  const [babyData, setBabyData] = useState<BabyData | null>(null)
+  const { profile: babyData, loading } = useBabyProfile()
 
-  useEffect(() => {
-    const saved = localStorage.getItem('cadastroBebe')
-    if (saved) {
-      setBabyData(JSON.parse(saved))
-    }
-  }, [])
+  if (loading) {
+    return (
+      <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-purple-200 dark:border-purple-800">
+        <CardContent className="pt-6">
+          <div className="text-center">
+            <Loader2 className="w-12 h-12 text-purple-400 mx-auto mb-3 animate-spin" />
+            <p className="text-gray-600 dark:text-gray-300">
+              Carregando informações...
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
 
   if (!babyData || !babyData.nome) {
     return (

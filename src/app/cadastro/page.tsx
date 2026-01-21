@@ -1,14 +1,17 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ArrowLeft, Save, Baby, Edit } from 'lucide-react'
+import { ArrowLeft, Save, Baby, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { BabyInfoCard } from '@/components/BabyInfoCard'
+import { useBabyProfile } from '@/hooks/useBabyProfile'
 
 export default function CadastroPage() {
   const router = useRouter()
+  const { profile, loading, saveProfile } = useBabyProfile()
   const [isEditing, setIsEditing] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     nome: '',
     dataNascimento: '',
@@ -23,13 +26,12 @@ export default function CadastroPage() {
   })
 
   useEffect(() => {
-    // Carregar dados salvos do localStorage
-    const saved = localStorage.getItem('cadastroBebe')
-    if (saved) {
-      setFormData(JSON.parse(saved))
+    // Carregar dados do perfil quando disponível
+    if (profile) {
+      setFormData(profile)
       setIsEditing(true)
     }
-  }, [])
+  }, [profile])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -38,12 +40,31 @@ export default function CadastroPage() {
     })
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Salvar no localStorage
-    localStorage.setItem('cadastroBebe', JSON.stringify(formData))
-    alert(isEditing ? 'Cadastro atualizado com sucesso!' : 'Cadastro salvo com sucesso!')
-    router.push('/')
+    setSubmitting(true)
+
+    try {
+      await saveProfile(formData)
+      alert(isEditing ? 'Cadastro atualizado com sucesso!' : 'Cadastro salvo com sucesso!')
+      router.push('/')
+    } catch (error) {
+      console.error('Erro ao salvar:', error)
+      alert('Erro ao salvar. Tente novamente.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-purple-600 dark:text-purple-400 mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-300">Carregando cadastro...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -236,10 +257,20 @@ export default function CadastroPage() {
             {/* Botão Salvar */}
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-4 rounded-lg font-semibold hover:from-purple-600 hover:to-pink-600 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center"
+              disabled={submitting}
+              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-4 rounded-lg font-semibold hover:from-purple-600 hover:to-pink-600 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Save className="w-5 h-5 mr-2" />
-              Salvar Cadastro
+              {submitting ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <Save className="w-5 h-5 mr-2" />
+                  Salvar Cadastro
+                </>
+              )}
             </button>
           </form>
         </div>

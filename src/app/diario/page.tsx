@@ -11,6 +11,7 @@ import { format, differenceInMinutes, differenceInMonths, parseISO } from 'date-
 import { ptBR } from 'date-fns/locale'
 import { BackButton } from '@/components/BackButton'
 import { useSleepEntries } from '@/hooks/useSleepEntries'
+import { useBabyProfile } from '@/hooks/useBabyProfile'
 
 interface SleepEntry {
   id: string
@@ -31,6 +32,7 @@ interface SleepWindow {
 
 export default function DiarioSono() {
   const { entries, loading, addEntry, updateEntry, deleteEntry } = useSleepEntries()
+  const { profile: babyProfile } = useBabyProfile()
   const [sleepType, setSleepType] = useState<'sono' | 'soneca'>('soneca')
   const [newEntry, setNewEntry] = useState({
     date: format(new Date(), 'yyyy-MM-dd'),
@@ -47,21 +49,17 @@ export default function DiarioSono() {
 
   // Calcular idade do bebê em meses
   useEffect(() => {
-    const saved = localStorage.getItem('cadastroBebe')
-    if (saved) {
+    if (babyProfile?.dataNascimento) {
       try {
-        const babyData = JSON.parse(saved)
-        if (babyData.dataNascimento) {
-          const [year, month, day] = babyData.dataNascimento.split('-').map(Number)
-          const birthDate = new Date(year, month - 1, day)
-          const ageInMonths = differenceInMonths(new Date(), birthDate)
-          setBabyAgeInMonths(ageInMonths)
-        }
+        const [year, month, day] = babyProfile.dataNascimento.split('-').map(Number)
+        const birthDate = new Date(year, month - 1, day)
+        const ageInMonths = differenceInMonths(new Date(), birthDate)
+        setBabyAgeInMonths(ageInMonths)
       } catch (error) {
         console.error('Erro ao calcular idade:', error)
       }
     }
-  }, [])
+  }, [babyProfile])
 
   // Iniciar ou salvar registro completo
   const startSleepEntry = async () => {
