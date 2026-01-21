@@ -1,23 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ArrowLeft, Plus, Calendar, Syringe, Stethoscope, Trash2, Baby, ChevronLeft, ChevronRight, Bell, Clock, Download, Share2 } from 'lucide-react'
+import { ArrowLeft, Plus, Calendar, Syringe, Stethoscope, Trash2, Baby, ChevronLeft, ChevronRight, Bell, Clock, Download, Share2, Loader2 } from 'lucide-react'
 import { BackButton } from '@/components/BackButton'
+import { useCalendarEvents, CalendarEvent } from '@/hooks/useCalendarEvents'
+import { useBabyProfile } from '@/hooks/useBabyProfile'
 
-interface Evento {
-  id: string
-  tipo: 'consulta' | 'vacina' | 'outro'
-  titulo: string
-  data: string
-  hora: string
-  observacoes: string
-  alertas: {
-    tresDias: boolean
-    umDia: boolean
-    umaHora: boolean
-  }
-  isPredefinido?: boolean
-}
+// Manter interface para compatibilidade com funções antigas
+interface Evento extends CalendarEvent {}
 
 interface Vacina {
   nome: string
@@ -45,12 +35,24 @@ interface Alerta {
 }
 
 export default function AgendaPage() {
-  const [eventos, setEventos] = useState<Evento[]>([])
+  // Hooks do Supabase
+  const { profile, loading: loadingProfile } = useBabyProfile()
+  const {
+    eventos,
+    loading: loadingEvents,
+    saveEvent,
+    saveMultipleEvents,
+    deleteEvent,
+    regenerateAutomaticEvents
+  } = useCalendarEvents()
+
+  // Estados locais
   const [mostrarForm, setMostrarForm] = useState(false)
   const [dataNascimento, setDataNascimento] = useState<string>('')
   const [mesAtual, setMesAtual] = useState(new Date())
   const [alertasAtivos, setAlertasAtivos] = useState<Alerta[]>([])
   const [saltoSelecionado, setSaltoSelecionado] = useState<SaltoDesenvolvimento | null>(null)
+  const [eventosPredefinidosGerados, setEventosPredefinidosGerados] = useState(false)
   const [novoEvento, setNovoEvento] = useState<Evento>({
     id: '',
     tipo: 'consulta',
@@ -236,7 +238,7 @@ export default function AgendaPage() {
       const dataFormatada = dataVacina.toISOString().split('T')[0]
 
       eventosVacinas.push({
-        id: `vacina-${index}-${Date.now()}`,
+        id: `temp-vacina-${index}-${Date.now()}`,
         tipo: 'vacina',
         titulo: `💉 ${vacina.nome} - ${vacina.dose}`,
         data: dataFormatada,
@@ -248,7 +250,7 @@ export default function AgendaPage() {
           umaHora: true
         },
         isPredefinido: true
-      })
+      } as Evento)
     })
 
     return eventosVacinas
@@ -267,7 +269,7 @@ export default function AgendaPage() {
       const dataFormatada = dataMesversario.toISOString().split('T')[0]
 
       eventosMesversarios.push({
-        id: `mesversario-${mesVida}-${Date.now()}`,
+        id: `temp-mesversario-${mesVida}-${Date.now()}`,
         tipo: 'outro',
         titulo: `🎂 Mesversário - ${mesVida} ${mesVida === 1 ? 'mês' : 'meses'}`,
         data: dataFormatada,
@@ -279,7 +281,7 @@ export default function AgendaPage() {
           umaHora: false
         },
         isPredefinido: true
-      })
+      } as Evento)
     }
 
     return eventosMesversarios
@@ -304,7 +306,7 @@ export default function AgendaPage() {
         const dataFormatada = dataAniversario.toISOString().split('T')[0]
 
         eventosAniversarios.push({
-          id: `aniversario-${idade}-${Date.now()}`,
+          id: `temp-aniversario-${idade}-${Date.now()}`,
           tipo: 'outro',
           titulo: `🎉 Aniversário - ${idade} ${idade === 1 ? 'ano' : 'anos'}`,
           data: dataFormatada,
@@ -316,56 +318,56 @@ export default function AgendaPage() {
             umaHora: false
           },
           isPredefinido: true
-        })
+        } as Evento)
       }
     }
 
     return eventosAniversarios
   }
 
+  // Carregar data de nascimento do perfil
   useEffect(() => {
-    // Carregar data de nascimento do cadastro
-    const cadastro = localStorage.getItem('cadastroBebe')
-    if (cadastro) {
-      const dados = JSON.parse(cadastro)
-      setDataNascimento(dados.dataNascimento)
+    if (profile?.dataNascimento) {
+      setDataNascimento(profile.dataNascimento)
+    }
+  }, [profile])
 
-      // Verificar se já existem eventos predefinidos gerados
-      const eventosSalvos = localStorage.getItem('eventosAgenda')
-      const eventosPredefinidosGerados = localStorage.getItem('eventosPredefinidosGerados')
+  // Gerar eventos predefinidos automaticamente quando tiver data de nascimento
+  useEffect(() => {
+    const gerarEventosPredefinidos = async () => {
+      if (!dataNascimento || eventosPredefinidosGerados || loadingEvents) return
 
-      if (!eventosPredefinidosGerados && dados.dataNascimento) {
-        // Gerar todos os eventos predefinidos automaticamente
-        const eventosVacinas = gerarEventosVacinacao(dados.dataNascimento)
-        const eventosMesversarios = gerarEventosMesversarios(dados.dataNascimento)
-        const eventosAniversarios = gerarEventosAniversarios(dados.dataNascimento)
+      // Verificar se já existem eventos predefinidos
+      const temEventosPredefinidos = eventos.some(e => e.isPredefinido)
 
-        // Combinar todos os eventos predefinidos
-        let todosEventos = [...eventosVacinas, ...eventosMesversarios, ...eventosAniversarios]
+      if (!temEventosPredefinidos) {
+        console.log('Gerando eventos predefinidos automaticamente...')
 
-        // Se já existem eventos salvos (criados pelo usuário), mesclar
-        if (eventosSalvos) {
-          const eventosExistentes = JSON.parse(eventosSalvos)
-          todosEventos = [...eventosExistentes, ...todosEventos]
+        // Gerar todos os eventos predefinidos
+        const eventosVacinas = gerarEventosVacinacao(dataNascimento)
+        const eventosMesversarios = gerarEventosMesversarios(dataNascimento)
+        const eventosAniversarios = gerarEventosAniversarios(dataNascimento)
+
+        const todosEventosPredefinidos = [
+          ...eventosVacinas,
+          ...eventosMesversarios,
+          ...eventosAniversarios
+        ]
+
+        try {
+          await saveMultipleEvents(todosEventosPredefinidos)
+          setEventosPredefinidosGerados(true)
+          console.log('Eventos predefinidos gerados com sucesso!')
+        } catch (error) {
+          console.error('Erro ao gerar eventos predefinidos:', error)
         }
-
-        setEventos(todosEventos)
-        localStorage.setItem('eventosAgenda', JSON.stringify(todosEventos))
-        localStorage.setItem('eventosPredefinidosGerados', 'true')
-        // Remover a flag antiga se existir
-        localStorage.removeItem('vacinacoesGeradas')
-      } else if (eventosSalvos) {
-        // Carregar eventos existentes
-        setEventos(JSON.parse(eventosSalvos))
-      }
-    } else {
-      // Carregar apenas eventos salvos se não houver cadastro
-      const eventosSalvos = localStorage.getItem('eventosAgenda')
-      if (eventosSalvos) {
-        setEventos(JSON.parse(eventosSalvos))
+      } else {
+        setEventosPredefinidosGerados(true)
       }
     }
-  }, [])
+
+    gerarEventosPredefinidos()
+  }, [dataNascimento, eventos, eventosPredefinidosGerados, loadingEvents])
 
   useEffect(() => {
     // Verificar alertas
@@ -542,38 +544,41 @@ export default function AgendaPage() {
     setMesAtual(new Date(mesAtual.getFullYear(), mesAtual.getMonth() + 1))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const evento: Evento = {
-      ...novoEvento,
-      id: Date.now().toString()
+
+    try {
+      await saveEvent(novoEvento)
+      setMostrarForm(false)
+      setNovoEvento({
+        id: '',
+        tipo: 'consulta',
+        titulo: '',
+        data: '',
+        hora: '',
+        observacoes: '',
+        alertas: {
+          tresDias: true,
+          umDia: true,
+          umaHora: true
+        }
+      })
+    } catch (error) {
+      console.error('Erro ao salvar evento:', error)
+      alert('Erro ao salvar evento. Tente novamente.')
     }
-    const novosEventos = [...eventos, evento]
-    setEventos(novosEventos)
-    localStorage.setItem('eventosAgenda', JSON.stringify(novosEventos))
-    setMostrarForm(false)
-    setNovoEvento({
-      id: '',
-      tipo: 'consulta',
-      titulo: '',
-      data: '',
-      hora: '',
-      observacoes: '',
-      alertas: {
-        tresDias: true,
-        umDia: true,
-        umaHora: true
-      }
-    })
   }
 
-  const deletarEvento = (id: string) => {
-    const novosEventos = eventos.filter(e => e.id !== id)
-    setEventos(novosEventos)
-    localStorage.setItem('eventosAgenda', JSON.stringify(novosEventos))
+  const deletarEvento = async (id: string) => {
+    try {
+      await deleteEvent(id)
+    } catch (error) {
+      console.error('Erro ao deletar evento:', error)
+      alert('Erro ao deletar evento. Tente novamente.')
+    }
   }
 
-  const regenerarEventosAutomaticos = () => {
+  const regenerarEventosAutomaticos = async () => {
     if (!dataNascimento) {
       alert('Não há data de nascimento cadastrada!')
       return
@@ -585,21 +590,29 @@ export default function AgendaPage() {
 
     if (!confirmacao) return
 
-    // Filtrar apenas eventos criados pelo usuário (não predefinidos)
-    const eventosUsuario = eventos.filter(e => !e.isPredefinido)
+    try {
+      // Deletar eventos predefinidos
+      await regenerateAutomaticEvents(dataNascimento, eventos)
 
-    // Gerar novos eventos automáticos
-    const eventosVacinas = gerarEventosVacinacao(dataNascimento)
-    const eventosMesversarios = gerarEventosMesversarios(dataNascimento)
-    const eventosAniversarios = gerarEventosAniversarios(dataNascimento)
+      // Gerar novos eventos automáticos
+      const eventosVacinas = gerarEventosVacinacao(dataNascimento)
+      const eventosMesversarios = gerarEventosMesversarios(dataNascimento)
+      const eventosAniversarios = gerarEventosAniversarios(dataNascimento)
 
-    // Combinar eventos do usuário com novos eventos automáticos
-    const todosEventos = [...eventosUsuario, ...eventosVacinas, ...eventosMesversarios, ...eventosAniversarios]
+      const todosEventosPredefinidos = [
+        ...eventosVacinas,
+        ...eventosMesversarios,
+        ...eventosAniversarios
+      ]
 
-    setEventos(todosEventos)
-    localStorage.setItem('eventosAgenda', JSON.stringify(todosEventos))
+      // Salvar novos eventos
+      await saveMultipleEvents(todosEventosPredefinidos)
 
-    alert('✅ Eventos automáticos regenerados com sucesso!')
+      alert('✅ Eventos automáticos regenerados com sucesso!')
+    } catch (error) {
+      console.error('Erro ao regenerar eventos:', error)
+      alert('Erro ao regenerar eventos. Tente novamente.')
+    }
   }
 
   const formatarDataParaICS = (data: string, hora: string): string => {
@@ -763,6 +776,18 @@ END:VCALENDAR`
   ]
 
   const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+
+  // Loading state
+  if (loadingProfile || loadingEvents) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-purple-600 dark:text-purple-400 mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-300">Carregando agenda...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 dark:from-gray-900 dark:to-gray-800">
