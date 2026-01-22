@@ -181,13 +181,7 @@ export default function AuthPage() {
             redirectTo={process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : '')}
           />
 
-          <div className="mt-6 space-y-4">
-            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
-              <p className="text-xs text-gray-700 dark:text-gray-300">
-                <strong>💡 Dica:</strong> Para habilitar login com Google, acesse o painel do Supabase → Authentication → Providers → Google e configure o OAuth.
-              </p>
-            </div>
-
+          <div className="mt-6">
             <div className="text-center">
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Ao criar uma conta, você concorda com nossos{' '}
