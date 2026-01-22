@@ -11,7 +11,7 @@ export function BackButton() {
     <Button
       onClick={() => router.push('/')}
       variant="outline"
-      className="mb-4 flex items-center gap-2 hover:bg-teal-50 hover:text-teal-700 hover:border-teal-300 transition-colors"
+      className="mb-4 flex items-center gap-2 hover:bg-teal-50 dark:hover:bg-teal-900/20 hover:text-teal-700 dark:hover:text-teal-300 hover:border-teal-300 dark:hover:border-teal-700 transition-colors"
     >
       <ArrowLeft className="w-4 h-4" />
       Voltar ao Início
