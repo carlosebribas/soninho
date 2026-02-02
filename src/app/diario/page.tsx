@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Moon, Sun, Clock, Plus, Coffee, TrendingUp, AlertCircle, Lightbulb, Loader2, Pencil, Trash2 } from 'lucide-react'
-import { format, differenceInMinutes, differenceInMonths, parseISO } from 'date-fns'
+import { format, differenceInMonths, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { BackButton } from '@/components/BackButton'
 import { useSleepEntries } from '@/hooks/useSleepEntries'
@@ -173,17 +173,27 @@ export default function DiarioSono() {
   }
 
   const calculateDuration = (start: string, end: string) => {
-    const startDate = new Date(`2000-01-01T${start}`)
-    let endDate = new Date(`2000-01-01T${end}`)
-    
-    // Se o horário de fim for menor que o de início, adiciona um dia
-    if (endDate < startDate) {
-      endDate = new Date(`2000-01-02T${end}`)
+    // Parse dos horários no formato HH:MM
+    const [startHours, startMinutes] = start.split(':').map(Number)
+    const [endHours, endMinutes] = end.split(':').map(Number)
+
+    // Converter tudo para minutos desde a meia-noite
+    let startTotalMinutes = startHours * 60 + startMinutes
+    let endTotalMinutes = endHours * 60 + endMinutes
+
+    // Se o horário de fim for menor que o de início, significa que passou da meia-noite
+    // Adiciona 24 horas (1440 minutos) ao horário de fim
+    if (endTotalMinutes < startTotalMinutes) {
+      endTotalMinutes += 1440 // 24 horas em minutos
     }
-    
-    const diff = endDate.getTime() - startDate.getTime()
-    const hours = Math.floor(diff / (1000 * 60 * 60))
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+
+    // Calcular a diferença em minutos
+    const totalMinutes = endTotalMinutes - startTotalMinutes
+
+    // Converter para horas e minutos
+    const hours = Math.floor(totalMinutes / 60)
+    const minutes = totalMinutes % 60
+
     return { hours, minutes, text: `${hours}h ${minutes}min` }
   }
 
@@ -201,10 +211,19 @@ export default function DiarioSono() {
 
       if (!currentEnd) continue
 
-      const endDate = new Date(`2000-01-01T${currentEnd}`)
-      const startDate = new Date(`2000-01-01T${nextStart}`)
+      // Usar a mesma lógica de cálculo da função calculateDuration
+      const [endHours, endMinutes] = currentEnd.split(':').map(Number)
+      const [startHours, startMinutes] = nextStart.split(':').map(Number)
 
-      const awakeDuration = differenceInMinutes(startDate, endDate)
+      let endTotalMinutes = endHours * 60 + endMinutes
+      let startTotalMinutes = startHours * 60 + startMinutes
+
+      // Se o próximo início for antes do término (passou da meia-noite)
+      if (startTotalMinutes < endTotalMinutes) {
+        startTotalMinutes += 1440 // 24 horas em minutos
+      }
+
+      const awakeDuration = startTotalMinutes - endTotalMinutes
 
       if (todayEntries[i].type === 'soneca' && currentEnd) {
         const napDuration = calculateDuration(todayEntries[i].startTime, currentEnd)
