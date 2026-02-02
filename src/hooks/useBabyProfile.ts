@@ -65,8 +65,11 @@ export function useBabyProfile() {
         if (error) {
           // Se não encontrou, não é erro crítico
           if (error.code === 'PGRST116') {
+            console.log('Nenhum perfil encontrado no Supabase')
             setProfile(null)
           } else {
+            console.error('Erro ao carregar do Supabase:', error)
+            // Se a tabela não existe, usar localStorage
             throw error
           }
         } else if (data) {
@@ -92,7 +95,7 @@ export function useBabyProfile() {
         }
       }
     } catch (error) {
-      console.error('Erro ao carregar perfil do bebê:', error)
+      console.error('Erro ao carregar perfil, usando localStorage:', error)
       // Fallback para localStorage
       const saved = localStorage.getItem('cadastroBebe')
       if (saved) {

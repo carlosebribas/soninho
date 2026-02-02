@@ -61,7 +61,11 @@ export function useSleepEntries() {
           .order('date', { ascending: false })
           .order('start_time', { ascending: false })
 
-        if (error) throw error
+        if (error) {
+          console.error('Erro ao carregar do Supabase:', error)
+          // Se a tabela não existe, usar localStorage
+          throw error
+        }
 
         if (data) {
           const formattedEntries: SleepEntry[] = data.map(entry => ({
@@ -85,7 +89,7 @@ export function useSleepEntries() {
         }
       }
     } catch (error) {
-      console.error('Erro ao carregar registros:', error)
+      console.error('Erro ao carregar registros, usando localStorage:', error)
       // Fallback para localStorage
       const saved = localStorage.getItem('sleepDiary')
       if (saved) {

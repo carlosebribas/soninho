@@ -7,6 +7,7 @@ import "./globals.css";
 import "../lib/fonts";
 import { AuthProvider } from "@/components/auth-provider";
 import { ThemeProvider } from "@/components/ui/theme-provider";
+import { DatabaseSetupAlert } from "@/components/DatabaseSetupAlert";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -91,6 +92,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>{children}</AuthProvider>
+          <DatabaseSetupAlert />
         </ThemeProvider>
       </body>
     </html>
