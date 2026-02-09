@@ -79,9 +79,7 @@ export default function Recomendacoes() {
     const recs: string[] = []
 
     if (sleepEntries.length === 0) {
-      recs.push("Comece registrando seus primeiros sonos para receber recomendações personalizadas!")
-      setRecommendations(recs)
-      return
+      return ["Comece registrando seus primeiros sonos para receber recomendações personalizadas!"]
     }
 
     // Parâmetros ideais por idade
@@ -213,13 +211,12 @@ export default function Recomendacoes() {
       }
     }
 
-    setRecommendations(recs)
+    return recs
   }, [babyAgeInMonths, babyBirthDate])
 
   useEffect(() => {
-    if (entries.length > 0) {
-      generateRecommendations(entries)
-    }
+    const recs = generateRecommendations(entries)
+    setRecommendations(recs)
   }, [entries, generateRecommendations])
 
   const calculateVariance = (values: number[]) => {
