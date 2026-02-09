@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -75,13 +75,7 @@ export default function Recomendacoes() {
     }
   }, [])
 
-  useEffect(() => {
-    if (entries.length > 0) {
-      generateRecommendations(entries)
-    }
-  }, [entries, babyAgeInMonths])
-
-  const generateRecommendations = (sleepEntries: SleepEntry[]) => {
+  const generateRecommendations = useCallback((sleepEntries: SleepEntry[]) => {
     const recs: string[] = []
 
     if (sleepEntries.length === 0) {
@@ -220,7 +214,13 @@ export default function Recomendacoes() {
     }
 
     setRecommendations(recs)
-  }
+  }, [babyAgeInMonths, babyBirthDate])
+
+  useEffect(() => {
+    if (entries.length > 0) {
+      generateRecommendations(entries)
+    }
+  }, [entries, generateRecommendations])
 
   const calculateVariance = (values: number[]) => {
     const mean = values.reduce((a, b) => a + b, 0) / values.length
