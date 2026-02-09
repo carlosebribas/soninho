@@ -71,27 +71,13 @@ export default function PromoCard() {
         </div>
       </div>
 
-      {/* Free Trial Banner */}
-      <div className="mb-8 p-6 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-2xl border-2 border-green-500/30 text-center">
-        <div className="inline-flex items-center justify-center gap-2 mb-3">
-          <Sparkles className="w-6 h-6 text-green-600 dark:text-green-400" />
-          <h3 className="text-2xl font-bold text-foreground">Comece Grátis!</h3>
-        </div>
-        <p className="text-lg text-muted-foreground mb-2">
-          Teste todas as funcionalidades básicas sem custo
-        </p>
-        <p className="text-sm text-green-600 dark:text-green-400 font-semibold">
-          ✨ Sem cartão de crédito • Cancele quando quiser • Upgrade opcional
-        </p>
-      </div>
-
       {/* Pricing Plans */}
       <div className="mb-8">
         <h2 className="text-2xl font-semibold text-center mb-2 text-foreground">
-          💎 Planos Premium
+          💎 Escolha o Plano Ideal para Você
         </h2>
         <p className="text-center text-muted-foreground mb-6">
-          Desbloqueie recursos avançados quando estiver pronto
+          Invista no sono saudável do seu bebê
         </p>
         <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
           {plans.map((plan, index) => (
@@ -199,16 +185,16 @@ export default function PromoCard() {
       <div className="text-center">
         <div className="inline-flex flex-col items-center gap-4 p-8 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 rounded-2xl text-white">
           <Sparkles className="w-12 h-12" />
-          <h3 className="text-2xl font-bold">Experimente Grátis Agora!</h3>
+          <h3 className="text-2xl font-bold">Comece Sua Jornada Hoje!</h3>
           <p className="text-white/90 max-w-md">
-            Crie sua conta e comece a usar o SONINHO hoje mesmo.
-            Todos os recursos básicos liberados sem custo.
+            Transforme a rotina de sono do seu bebê com tecnologia inteligente.
+            Escolha o plano perfeito para sua família.
           </p>
           <button className="px-8 py-3 bg-white text-blue-600 font-semibold rounded-full hover:bg-gray-100 transition-colors shadow-lg">
-            Começar Gratuitamente
+            Assinar Agora
           </button>
           <p className="text-sm text-white/70">
-            💡 Sem cartão de crédito • Upgrade opcional para recursos avançados
+            💡 Cancele quando quiser • Suporte dedicado incluído
           </p>
         </div>
       </div>
