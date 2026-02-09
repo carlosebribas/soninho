@@ -16,22 +16,17 @@ export default function PromoCard() {
 
   const plans = [
     {
-      name: 'Free',
-      description: 'Para começar',
-      features: ['Diário básico', 'Alertas simples', 'Agenda']
-    },
-    {
       name: 'Basic',
       price: 'R$ 19,90',
       description: 'Para famílias ativas',
-      features: ['Tudo do Free', 'Relatórios completos', 'Histórico ilimitado'],
+      features: ['Diário completo de sono', 'Alertas personalizados', 'Agenda e lembretes', 'Relatórios e estatísticas', 'Histórico ilimitado'],
       popular: false
     },
     {
       name: 'Pro',
       price: 'R$ 39,90',
       description: 'Experiência completa',
-      features: ['Tudo do Basic', 'Recomendações IA', 'Comunidade Premium', 'Suporte prioritário'],
+      features: ['Tudo do Basic', 'Recomendações com IA', 'Comunidade Premium', 'Análises avançadas', 'Suporte prioritário'],
       popular: true
     }
   ]
@@ -76,12 +71,29 @@ export default function PromoCard() {
         </div>
       </div>
 
+      {/* Free Trial Banner */}
+      <div className="mb-8 p-6 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-2xl border-2 border-green-500/30 text-center">
+        <div className="inline-flex items-center justify-center gap-2 mb-3">
+          <Sparkles className="w-6 h-6 text-green-600 dark:text-green-400" />
+          <h3 className="text-2xl font-bold text-foreground">Comece Grátis!</h3>
+        </div>
+        <p className="text-lg text-muted-foreground mb-2">
+          Teste todas as funcionalidades básicas sem custo
+        </p>
+        <p className="text-sm text-green-600 dark:text-green-400 font-semibold">
+          ✨ Sem cartão de crédito • Cancele quando quiser • Upgrade opcional
+        </p>
+      </div>
+
       {/* Pricing Plans */}
       <div className="mb-8">
-        <h2 className="text-2xl font-semibold text-center mb-6 text-foreground">
-          💎 Planos que Cabem no seu Bolso
+        <h2 className="text-2xl font-semibold text-center mb-2 text-foreground">
+          💎 Planos Premium
         </h2>
-        <div className="grid md:grid-cols-3 gap-6">
+        <p className="text-center text-muted-foreground mb-6">
+          Desbloqueie recursos avançados quando estiver pronto
+        </p>
+        <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
           {plans.map((plan, index) => (
             <div
               key={index}
@@ -187,16 +199,16 @@ export default function PromoCard() {
       <div className="text-center">
         <div className="inline-flex flex-col items-center gap-4 p-8 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 rounded-2xl text-white">
           <Sparkles className="w-12 h-12" />
-          <h3 className="text-2xl font-bold">Comece Grátis Hoje!</h3>
+          <h3 className="text-2xl font-bold">Experimente Grátis Agora!</h3>
           <p className="text-white/90 max-w-md">
-            Experimente todos os recursos básicos sem compromisso.
-            Faça upgrade quando estiver pronto.
+            Crie sua conta e comece a usar o SONINHO hoje mesmo.
+            Todos os recursos básicos liberados sem custo.
           </p>
           <button className="px-8 py-3 bg-white text-blue-600 font-semibold rounded-full hover:bg-gray-100 transition-colors shadow-lg">
-            Criar Conta Grátis
+            Começar Gratuitamente
           </button>
           <p className="text-sm text-white/70">
-            💡 Não precisa cartão de crédito
+            💡 Sem cartão de crédito • Upgrade opcional para recursos avançados
           </p>
         </div>
       </div>
