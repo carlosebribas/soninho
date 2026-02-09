@@ -10,6 +10,7 @@ import { ptBR } from 'date-fns/locale'
 import { BackButton } from '@/components/BackButton'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { useSleepEntries } from '@/hooks/useSleepEntries'
+import { useBabyProfile } from '@/hooks/useBabyProfile'
 
 interface SleepEntry {
   id: string
@@ -24,11 +25,14 @@ interface SleepEntry {
 }
 
 export default function Recomendacoes() {
-  const { entries: rawEntries, loading } = useSleepEntries()
+  const { entries: rawEntries, loading: loadingEntries } = useSleepEntries()
+  const { profile: babyProfile, loading: loadingProfile } = useBabyProfile()
   const entries = rawEntries.filter(e => !e.isPending && e.endTime) // Apenas registros completos
   const [recommendations, setRecommendations] = useState<string[]>([])
   const [babyAgeInMonths, setBabyAgeInMonths] = useState<number>(0)
   const [babyBirthDate, setBabyBirthDate] = useState<Date | null>(null)
+
+  const loading = loadingEntries || loadingProfile
 
   // Função para formatar idade de forma legível
   const formatBabyAge = (totalMonths: number, birthDate?: Date) => {
@@ -56,24 +60,27 @@ export default function Recomendacoes() {
     }
   }
 
-  // Calcular idade do bebê
+  // Calcular idade do bebê a partir do perfil
   useEffect(() => {
-    const saved = localStorage.getItem('cadastroBebe')
-    if (saved) {
+    if (babyProfile?.dataNascimento) {
       try {
-        const babyData = JSON.parse(saved)
-        if (babyData.dataNascimento) {
-          const [year, month, day] = babyData.dataNascimento.split('-').map(Number)
-          const birthDate = new Date(year, month - 1, day)
-          const ageInMonths = differenceInMonths(new Date(), birthDate)
-          setBabyAgeInMonths(ageInMonths)
-          setBabyBirthDate(birthDate)
-        }
+        const [year, month, day] = babyProfile.dataNascimento.split('-').map(Number)
+        const birthDate = new Date(year, month - 1, day)
+        const now = new Date()
+        const ageInMonths = differenceInMonths(now, birthDate)
+
+        console.log('Data de nascimento:', babyProfile.dataNascimento)
+        console.log('Data calculada:', birthDate)
+        console.log('Data atual:', now)
+        console.log('Idade em meses:', ageInMonths)
+
+        setBabyAgeInMonths(ageInMonths)
+        setBabyBirthDate(birthDate)
       } catch (error) {
         console.error('Erro ao calcular idade:', error)
       }
     }
-  }, [])
+  }, [babyProfile])
 
   const generateRecommendations = useCallback((sleepEntries: SleepEntry[]) => {
     const recs: string[] = []
