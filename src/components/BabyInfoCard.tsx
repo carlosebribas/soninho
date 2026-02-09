@@ -8,7 +8,12 @@ import { differenceInDays, differenceInMonths, differenceInYears, format } from 
 import { ptBR } from 'date-fns/locale'
 import { useBabyProfile } from '@/hooks/useBabyProfile'
 
-export function BabyInfoCard() {
+interface BabyInfoCardProps {
+  onEdit?: () => void // Callback para quando o usuário clicar em editar
+  showEditButton?: boolean // Controla se mostra o botão de editar (padrão: true)
+}
+
+export function BabyInfoCard({ onEdit, showEditButton = true }: BabyInfoCardProps = {}) {
   const { profile: babyData, loading } = useBabyProfile()
 
   if (loading) {
@@ -85,11 +90,24 @@ export function BabyInfoCard() {
             <Baby className="w-6 h-6" />
             Informações do Bebê
           </CardTitle>
-          <Link href="/cadastro">
-            <Button variant="ghost" size="sm" className="text-purple-600 hover:text-purple-700 hover:bg-purple-100">
-              <Edit2 className="w-4 h-4" />
-            </Button>
-          </Link>
+          {showEditButton && (
+            onEdit ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-purple-600 hover:text-purple-700 hover:bg-purple-100"
+                onClick={onEdit}
+              >
+                <Edit2 className="w-4 h-4" />
+              </Button>
+            ) : (
+              <Link href="/cadastro">
+                <Button variant="ghost" size="sm" className="text-purple-600 hover:text-purple-700 hover:bg-purple-100">
+                  <Edit2 className="w-4 h-4" />
+                </Button>
+              </Link>
+            )
+          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
