@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { TrendingUp, Target, Clock, Zap, Download, FileText, Loader2 } from 'lucide-react'
-import { format, differenceInMonths } from 'date-fns'
+import { format, differenceInMonths, differenceInYears } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { BackButton } from '@/components/BackButton'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
@@ -28,6 +28,33 @@ export default function Recomendacoes() {
   const entries = rawEntries.filter(e => !e.isPending && e.endTime) // Apenas registros completos
   const [recommendations, setRecommendations] = useState<string[]>([])
   const [babyAgeInMonths, setBabyAgeInMonths] = useState<number>(0)
+  const [babyBirthDate, setBabyBirthDate] = useState<Date | null>(null)
+
+  // Função para formatar idade de forma legível
+  const formatBabyAge = (totalMonths: number, birthDate?: Date) => {
+    if (!birthDate) {
+      if (totalMonths < 12) {
+        return `${totalMonths} ${totalMonths === 1 ? 'mês' : 'meses'}`
+      } else {
+        const years = Math.floor(totalMonths / 12)
+        const months = totalMonths % 12
+        if (months === 0) {
+          return `${years} ${years === 1 ? 'ano' : 'anos'}`
+        }
+        return `${years} ${years === 1 ? 'ano' : 'anos'} e ${months} ${months === 1 ? 'mês' : 'meses'}`
+      }
+    }
+
+    const now = new Date()
+    const years = differenceInYears(now, birthDate)
+    const remainingMonths = differenceInMonths(now, birthDate) % 12
+
+    if (years > 0) {
+      return `${years} ${years > 1 ? 'anos' : 'ano'} e ${remainingMonths} ${remainingMonths !== 1 ? 'meses' : 'mês'}`
+    } else {
+      return `${remainingMonths} ${remainingMonths !== 1 ? 'meses' : 'mês'}`
+    }
+  }
 
   // Calcular idade do bebê
   useEffect(() => {
@@ -40,6 +67,7 @@ export default function Recomendacoes() {
           const birthDate = new Date(year, month - 1, day)
           const ageInMonths = differenceInMonths(new Date(), birthDate)
           setBabyAgeInMonths(ageInMonths)
+          setBabyBirthDate(birthDate)
         }
       } catch (error) {
         console.error('Erro ao calcular idade:', error)
@@ -127,7 +155,10 @@ export default function Recomendacoes() {
     const totalAvgSleep = avgNapDuration * (naps.length / 7) + avgNightSleep
 
     // Recomendações baseadas em idade
-    if (ageRange) {
+    if (ageRange && babyBirthDate) {
+      const ageFormatted = formatBabyAge(babyAgeInMonths, babyBirthDate)
+      recs.push(`📊 Análise para bebê de ${ageFormatted} (faixa ${ageRange})`)
+    } else if (ageRange) {
       recs.push(`📊 Análise para bebê de ${ageRange}`)
     }
 
